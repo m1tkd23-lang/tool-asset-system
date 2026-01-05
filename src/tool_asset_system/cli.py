@@ -1,3 +1,4 @@
+#src/tool_asset_system/cli.py
 from __future__ import annotations
 import argparse
 
@@ -21,7 +22,7 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     if args.cmd == "parts" and args.sub == "add":
-        add_part(
+        asset_code = add_part(
             layer_code=args.layer,
             category_code=args.category,
             category_free_text=args.category_free,
@@ -29,6 +30,7 @@ def main(argv=None):
             maker=args.maker,
             stock_unit=args.unit,
         )
+        print(f"[parts] added: {asset_code}")
 
 if __name__ == "__main__":
     main()
