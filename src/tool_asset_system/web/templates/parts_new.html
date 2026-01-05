@@ -1,0 +1,90 @@
+<!--templates/parts_new.html-->
+
+{% extends "base.html" %}
+{% block content %}
+
+<h3>New Part</h3>
+
+<form method="post" class="row" style="align-items:flex-start;">
+    <div>
+        <div>Layer</div>
+        <select id="layer" name="layer">
+            {% for l in layers %}
+            <option value="{{l.code}}" {% if selected_layer==l.code %}selected{% endif %}>
+                {{l.code}} / {{l.label}}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <div>Category（辞書）</div>
+        <select id="category" name="category">
+            <option value="">(none)</option>
+            {% for c in categories %}
+            <option value="{{c.code}}">{{c.code}} / {{c.label}}</option>
+            {% endfor %}
+        </select>
+        <div style="font-size:12px;color:#666;margin-top:4px;">
+            ※ free許可レイヤーのみ categoryなし可（DBが判定）
+        </div>
+    </div>
+
+    <div>
+        <div>Category free text（任意）</div>
+        <input name="category_free" value="{{form.get('category_free','')}}">
+    </div>
+
+    <div>
+        <div>Maker</div>
+        <input name="maker" required value="{{form.get('maker','')}}">
+    </div>
+
+    <div>
+        <div>Part No</div>
+        <input name="part_no" required value="{{form.get('part_no','')}}">
+    </div>
+
+    <div>
+        <div>Unit</div>
+        <input name="unit" value="{{form.get('unit','EA')}}">
+    </div>
+
+    <div>
+        <div>Display name（任意）</div>
+        <input name="name" value="{{form.get('name','')}}">
+    </div>
+
+    <div>
+        <div>Maker part name（任意）</div>
+        <input name="maker_part_name" value="{{form.get('maker_part_name','')}}">
+    </div>
+
+    <div style="align-self:flex-end;">
+        <button type="submit">Add</button>
+    </div>
+</form>
+
+<script>
+    // layer変更時にカテゴリ候補を取り直す（任意だけど便利）
+    const layerSel = document.getElementById("layer");
+    const catSel = document.getElementById("category");
+
+    async function refreshCategories() {
+        const layer = layerSel.value;
+        const res = await fetch(`/api/categories?layer=${encodeURIComponent(layer)}`);
+        const cats = await res.json();
+
+        catSel.innerHTML = `<option value="">(none)</option>`;
+        for (const c of cats) {
+            const opt = document.createElement("option");
+            opt.value = c.code;
+            opt.textContent = `${c.code} / ${c.label}`;
+            catSel.appendChild(opt);
+        }
+    }
+
+    layerSel.addEventListener("change", refreshCategories);
+</script>
+
+{% endblock %}

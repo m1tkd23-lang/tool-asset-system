@@ -1,0 +1,73 @@
+<!--templates/parts_list.html-->
+
+{% extends "base.html" %}
+{% block content %}
+
+<form method="get" class="row">
+    <label>Layer:
+        <select name="layer" onchange="this.form.submit()">
+            <option value="">(all)</option>
+            {% for l in layers %}
+            <option value="{{l.code}}" {% if current.layer==l.code %}selected{% endif %}>
+                {{l.code}} / {{l.label}}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>Category:
+        <select name="category">
+            <option value="">(all)</option>
+            {% for c in categories %}
+            <option value="{{c.code}}" {% if current.category==c.code %}selected{% endif %}>
+                {{c.code}} / {{c.label}}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>Status:
+        <select name="status">
+            <option value="">(all)</option>
+            {% for s in ["ACTIVE","ARCHIVED","OBSOLETE","PROVISIONAL"] %}
+            <option value="{{s}}" {% if current.status==s %}selected{% endif %}>{{s}}</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>Search:
+        <input name="q" value="{{current.q or ''}}" placeholder="asset/maker/part/name">
+    </label>
+
+    <button type="submit">Filter</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>asset_code</th>
+            <th>layer</th>
+            <th>category</th>
+            <th>status</th>
+            <th>maker</th>
+            <th>part_no</th>
+            <th>display_name</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in rows %}
+        <tr>
+            <td><code>{{r.asset_code}}</code></td>
+            <td>{{r.layer_code}}</td>
+            <td>{{r.category_code or "(free)"}}{% if r.category_free_text %} <span
+                    class="badge">{{r.category_free_text}}</span>{% endif %}</td>
+            <td>{{r.status}}</td>
+            <td>{{r.maker}}</td>
+            <td>{{r.part_no}}</td>
+            <td>{{r.display_name}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

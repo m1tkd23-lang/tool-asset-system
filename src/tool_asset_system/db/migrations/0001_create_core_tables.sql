@@ -1,3 +1,5 @@
+-- 0001_create_core_tables.sql
+
 PRAGMA foreign_keys = ON;
 
 -- migration管理

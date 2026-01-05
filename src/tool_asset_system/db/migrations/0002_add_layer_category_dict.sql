@@ -1,3 +1,5 @@
+-- 0002_add_layer_category_dict.sql
+
 PRAGMA foreign_keys = ON;
 
 -- レイヤー辞書
