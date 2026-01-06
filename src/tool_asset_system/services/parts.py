@@ -162,86 +162,78 @@ def list_parts(
         rows = con.execute(sql, params).fetchall()
         return [_row_to_dict(r) for r in rows]  # type: ignore[misc]
 
-
 def update_part(
     asset_code: str,
     *,
-    patch: dict[str, Any],
-    reason: str | None = None,
+    display_name: str | None = None,
+    maker_part_name: str | None = None,
+    note: str | None = None,
+    stock_qty: float | None = None,
+    stock_unit: str | None = None,
+    unit_price: float | None = None,
+    supplier: str | None = None,
+    lead_time_days: int | None = None,
+    min_stock_qty: float | None = None,
+    actor: str | None = None,
 ) -> None:
-    """
-    Update allowed fields and write operation log (mandatory).
-    """
-    allowed = {
-        "layer_code", "category_code", "category_free_text",
-        "display_name", "maker_part_name",
-        "stock_qty", "stock_unit",
-        "pack_qty", "unit_price", "supplier",
-        "lead_time_days", "min_stock_qty",
-        "status",
-        "note",
-    }
+    actor = actor or os.environ.get("USERNAME") or "unknown"
 
-    unknown = set(patch.keys()) - allowed
-    if unknown:
-        raise ValueError(f"unknown fields in patch: {sorted(unknown)}")
+    fields: list[tuple[str, object]] = []
+    if display_name is not None: fields.append(("display_name", display_name))
+    if maker_part_name is not None: fields.append(("maker_part_name", maker_part_name))
+    if note is not None: fields.append(("note", note))
+    if stock_qty is not None: fields.append(("stock_qty", stock_qty))
+    if stock_unit is not None: fields.append(("stock_unit", stock_unit))
+    if unit_price is not None: fields.append(("unit_price", unit_price))
+    if supplier is not None: fields.append(("supplier", supplier))
+    if lead_time_days is not None: fields.append(("lead_time_days", lead_time_days))
+    if min_stock_qty is not None: fields.append(("min_stock_qty", min_stock_qty))
 
-    # normalize status
-    if "status" in patch and patch["status"] is not None:
-        patch["status"] = str(patch["status"]).upper()
+    if not fields:
+        return
+
+    set_sql = ", ".join([f"{k} = ?" for k, _ in fields] + ["updated_at = CURRENT_TIMESTAMP"])
+    params = [v for _, v in fields] + [asset_code]
 
     with connect() as con:
         con.execute("BEGIN IMMEDIATE")
-
-        before = con.execute("SELECT * FROM parts WHERE asset_code = ?", (asset_code,)).fetchone()
-        if before is None:
+        cur = con.execute(f"UPDATE parts SET {set_sql} WHERE asset_code = ?", params)
+        if cur.rowcount != 1:
             raise ValueError(f"part not found: {asset_code}")
 
-        new_layer = patch.get("layer_code", before["layer_code"])
-        new_cat = patch.get("category_code", before["category_code"])
-
-        # enforce policy/consistency
-        _validate_category(con, layer_code=str(new_layer), category_code=(None if new_cat is None else str(new_cat)))
-
-        # build SET clause
-        sets: list[str] = []
-        params: list[Any] = []
-
-        for k, v in patch.items():
-            sets.append(f"{k} = ?")
-            params.append(v)
-
-        sets.append("updated_at = CURRENT_TIMESTAMP")
-
-        sql = f"UPDATE parts SET {', '.join(sets)} WHERE asset_code = ?"
-        params.append(asset_code)
-
-        con.execute(sql, params)
-
-        after = con.execute("SELECT * FROM parts WHERE asset_code = ?", (asset_code,)).fetchone()
-
+        # ここで必ずログを残す（トリガーで既に残してる場合は二重になるので後で整理OK）
         con.execute(
-            """
-            INSERT INTO operation_logs(
-              action, target_type, target_code,
-              actor, reason,
-              patch_json, before_json, after_json
-            ) VALUES(?,?,?,?,?,?,?,?)
-            """,
-            (
-                "PART_UPDATE", "PART", asset_code,
-                _actor(), reason,
-                json.dumps(patch, ensure_ascii=False),
-                json.dumps(_row_to_dict(before), ensure_ascii=False),
-                json.dumps(_row_to_dict(after), ensure_ascii=False),
-            ),
+            "INSERT INTO operation_logs(action,target_type,target_code,actor) VALUES(?,?,?,?)",
+            ("PART_UPDATE", "PART", asset_code, actor),
         )
-
         con.commit()
 
 
-def archive_part(asset_code: str, *, reason: str) -> None:
-    if not reason or not reason.strip():
-        raise ValueError("reason is required for archive")
+def archive_part(asset_code: str, *, actor: str | None = None) -> None:
+    actor = actor or os.environ.get("USERNAME") or "unknown"
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        cur = con.execute(
+            "UPDATE parts SET status='ARCHIVED', updated_at=CURRENT_TIMESTAMP WHERE asset_code=?",
+            (asset_code,),
+        )
+        if cur.rowcount != 1:
+            raise ValueError(f"part not found: {asset_code}")
 
-    update_part(asset_code, patch={"status": "ARCHIVED"}, reason=reason)
+        con.execute(
+            "INSERT INTO operation_logs(action,target_type,target_code,actor) VALUES(?,?,?,?)",
+            ("PART_ARCHIVE", "PART", asset_code, actor),
+        )
+        con.commit()
+
+def _insert_log(con, *, action: str, target_code: str, actor: str, target_type: str = "PART"):
+    cols = [r[1] for r in con.execute("PRAGMA table_info(operation_logs)").fetchall()]  # nameは index=1
+    data = {
+        "action": action,
+        "target_code": target_code,
+        "actor": actor,
+        "target_type": target_type,
+    }
+    use = [k for k in ["action", "target_type", "target_code", "actor"] if k in cols]
+    sql = f"INSERT INTO operation_logs({', '.join(use)}) VALUES({', '.join(['?']*len(use))})"
+    con.execute(sql, [data[k] for k in use])

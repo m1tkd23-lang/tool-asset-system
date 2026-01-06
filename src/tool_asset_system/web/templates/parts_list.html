@@ -57,7 +57,11 @@
     <tbody>
         {% for r in rows %}
         <tr>
-            <td><code>{{r.asset_code}}</code></td>
+            <td>
+                <a href="{{ url_for('parts.part_detail', asset_code=r.asset_code) }}">
+                    <code>{{ r.asset_code }}</code>
+                </a>
+            </td>
             <td>{{r.layer_code}}</td>
             <td>{{r.category_code or "(free)"}}{% if r.category_free_text %} <span
                     class="badge">{{r.category_free_text}}</span>{% endif %}</td>
