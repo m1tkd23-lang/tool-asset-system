@@ -2,471 +2,606 @@
    共通レイアウト & テーマ変数（Dark only）
    ========================================================= */
 
-   body.app-body {
-    /* カラーバリアブル（ダーク固定） */
-    --bg-body: #242424;              /* 全体背景 */
-    --bg-surface: #2d2d2d;           /* カードやフォームの背景 */
-    --bg-surface-alt: #333333;       /* テーブルヘッダなど */
-    --border-subtle: #333333;
-  
-    --text-main: #f5f5f5;
-    --text-muted: #b3b3b3;
-  
-    --accent: #49d836;               /* 緑系アクセント */
-    --accent-soft: rgba(73, 216, 54, 0.16);
-    --danger: #ff6b6b;
-  
-    /* ===== Form controls ===== */
-    --control-bg: #2e2e2e;
-    --control-bg-focus: #3a3a3a;
-    --control-bg-readonly: #111;
-    --control-border: #444;
-    --control-border-focus: var(--accent);
-    --control-text: var(--text-main);
-    --control-placeholder: #888;
-  
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-  
-    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.4);
-  
-    margin: 0;
-    padding: 6px 14px;
-    background-color: var(--bg-body);
-    color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                 system-ui, sans-serif;
-  }
-  
-  /* =========================================================
+body.app-body {
+  /* カラーバリアブル（ダーク固定） */
+  --bg-body: #242424;
+  /* 全体背景 */
+  --bg-surface: #2d2d2d;
+  /* カードやフォームの背景 */
+  --bg-surface-alt: #333333;
+  /* テーブルヘッダなど */
+  --border-subtle: #333333;
+
+  --text-main: #f5f5f5;
+  --text-muted: #b3b3b3;
+
+  --accent: #49d836;
+  /* 緑系アクセント */
+  --accent-soft: rgba(73, 216, 54, 0.16);
+  --danger: #ff6b6b;
+
+  /* ===== Form controls ===== */
+  --control-bg: #2e2e2e;
+  --control-bg-focus: #3a3a3a;
+  --control-bg-readonly: #111;
+  --control-border: #444;
+  --control-border-focus: var(--accent);
+  --control-text: var(--text-main);
+  --control-placeholder: #888;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+  margin: 0;
+  padding: 6px 14px;
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+    system-ui, sans-serif;
+}
+
+/* =========================================================
      レイアウト
      ========================================================= */
-  
-  .app-root {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 16px 24px 32px;
-  }
-  
-  .app-main {
-    margin-top: 12px;
-  }
-  
-  hr {
-    border: none;
-    border-top: 1px solid var(--border-subtle);
-    margin: 8px 0 12px;
-  }
-  
-  /* =========================================================
+
+.app-root {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 24px 32px;
+}
+
+.app-main {
+  margin-top: 12px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 8px 0 12px;
+}
+
+/* =========================================================
      リンク & テキスト
      ========================================================= */
-  
-  a {
-    color: var(--accent);
-  }
-  a:hover {
-    text-decoration: underline;
-  }
-  
-  .text-muted {
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-  
-  /* =========================================================
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* =========================================================
      フォーム（入力コントロール）
      ========================================================= */
-  
-  input[type="text"],
-  input[type="number"],
-  input[type="search"],
-  input[type="url"],
-  select,
-  textarea {
-    background-color: var(--control-bg);
-    color: var(--control-text);
-    border: 1px solid var(--control-border);
-    padding: 6px 8px;
-    border-radius: 6px;
-    transition: border-color 0.2s ease,
-                background-color 0.2s ease;
-  }
-  
-  input::placeholder,
-  textarea::placeholder {
-    color: var(--control-placeholder);
-  }
-  
-  input:focus,
-  select:focus,
-  textarea:focus {
-    outline: none;
-    border-color: var(--control-border-focus);
-    background-color: var(--control-bg-focus);
-  }
-  
-  textarea[readonly] {
-    background-color: var(--control-bg-readonly);
-    color: var(--control-text);
-    border: 1px solid var(--control-border);
-    font-family: "Consolas", "SFMono-Regular", monospace;
-    font-size: 0.9rem;
-  }
-  
-  /* =========================================================
+
+input[type="text"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+select,
+textarea {
+  background-color: var(--control-bg);
+  color: var(--control-text);
+  border: 1px solid var(--control-border);
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--control-placeholder);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--control-border-focus);
+  background-color: var(--control-bg-focus);
+}
+
+textarea[readonly] {
+  background-color: var(--control-bg-readonly);
+  color: var(--control-text);
+  border: 1px solid var(--control-border);
+  font-family: "Consolas", "SFMono-Regular", monospace;
+  font-size: 0.9rem;
+}
+
+/* =========================================================
      フォーム幅制御（new / edit 共通）
      ========================================================= */
-  
-  .app-main form {
-    max-width: 980px;
+
+.app-main form {
+  max-width: 980px;
+}
+
+.app-main form input[type="text"],
+.app-main form input[type="url"],
+.app-main form input[type="search"],
+.app-main form select,
+.app-main form textarea {
+  width: 100%;
+  max-width: 980px;
+  box-sizing: border-box;
+}
+
+/* プレビュー textarea */
+#path_preview {
+  width: 100%;
+  max-width: 980px;
+  box-sizing: border-box;
+}
+
+/* ===== 一覧(index)の検索フォームだけ、入力を横並びしやすくする ===== */
+.filter-form input[type="text"],
+.filter-form input[type="search"],
+.filter-form select {
+  width: auto;
+  /* ← .app-main form の width:100% を打ち消す */
+  max-width: none;
+}
+
+/* ============================
+   Parts list: フィルタ（2行構成）
+   1行目: Layer / Category / Status
+   2行目: Search + Filterボタン
+   ============================ */
+
+.filter-form {
+  display: grid;
+  grid-template-columns: 240px 280px 200px;
+  /* 1行目の3列 */
+  gap: 10px 14px;
+  align-items: end;
+  max-width: 1180px;
+  /* app-root内なので保険 */
+}
+
+.filter-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.filter-form select,
+.filter-form input[type="search"],
+.filter-form input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 2行目（Search行）を横いっぱい使う */
+.filter-form .filter-search {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+
+.filter-form .filter-search .q-input {
+  flex: 1 1 auto;
+  min-width: 240px;
+}
+
+.filter-form .filter-search button {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--control-border);
+  background: var(--control-bg);
+  color: var(--control-text);
+  cursor: pointer;
+}
+
+.filter-form .filter-search button:hover {
+  border-color: var(--accent);
+}
+
+/* 画面が狭いときは縦積みに寄せる */
+@media (max-width: 900px) {
+  .filter-form {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
-  
-  .app-main form input[type="text"],
-  .app-main form input[type="url"],
-  .app-main form input[type="search"],
-  .app-main form select,
-  .app-main form textarea {
-    width: 100%;
-    max-width: 980px;
-    box-sizing: border-box;
-  }
-  
-  /* プレビュー textarea */
-  #path_preview {
-    width: 100%;
-    max-width: 980px;
-    box-sizing: border-box;
-  }
-  
-  /* ===== 一覧(index)の検索フォームだけ、入力を横並びしやすくする ===== */
-  .filter-form input[type="text"],
-  .filter-form input[type="search"],
-  .filter-form select {
-    width: auto;        /* ← .app-main form の width:100% を打ち消す */
-    max-width: none;
-  }
-  
-  /* 各フィルタが潰れすぎない最低幅（好みで調整OK） */
-  .filter-form select { min-width: 240px; }
-  .filter-form #category_select,
-  .filter-form #category_input { min-width: 260px; }
-  
-  /* index のキーワードは「グリッドの幅に従う」ようにする */
-  .filter-form .q-input {
-    width: 100%;
-    min-width: 240px;   /* 画面が狭いときに最低限 */
-  }
-  
-  /* Statusは固定気味に */
-  .filter-form .status-select {
-    min-width: 180px;
-  }
-  
-  /* ===== アプリ内ページタイトル（全ページ共通） ===== */
-  .app-main h2 {
-    font-size: 1.2rem;
-    margin-top: 0.2em;
-    margin-bottom: 0.6em;
-  }
-  
-  /* ===== index 検索フォーム：狭い画面での並び替え ===== */
-  @media (max-width: 900px) {
-    .filter-row-2 {
-      grid-template-columns: 1fr auto;   /* キーワード | Status */
-    }
-    .filter-row-2 .filter-actions {
-      grid-column: 1 / -1;              /* 横いっぱい */
-      justify-content: flex-end;
-      margin-top: 0.4em;
-    }
-  }
-  
-  /* =========================================================
-     テーブル
-     ========================================================= */
-  
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    font-size: 13px;
-  }
-  
-  th,
-  td {
-    padding: 4px 8px;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-  
-  th {
-    text-align: left;
-    background-color: var(--bg-surface-alt);
-    font-weight: 500;
-    white-space: nowrap;
-  }
-  
-  /* 偶数行：ほんのり */
-  tbody tr:nth-child(even) td {
-    background-color: rgba(255, 255, 255, 0.012);
-  }
-  
-  /* hover：白っぽく“塗る”より、アクセントを薄く載せる方がダークに馴染む */
-  tbody tr:hover td {
-    background-color: var(--accent-soft);
-  }
-  
-  /* =========================================================
-     タグ
-     ========================================================= */
-  
-  .tag {
-    display: inline-block;
-    padding: 8px 20px;
-    margin: 4px 8px;
-    border-radius: 10px;
-    background: #0a3355;
-    font-size: 14px;
-    color: var(--text-main);
-    font-weight: 500;
-  }
-  
-  /* =========================================================
-     リンク一覧（detail）
-     ========================================================= */
-  
-  .link-list {
-    list-style: none;
-    padding-left: 0;
-    margin: 0 0 0.5rem 0;
-  }
-  
-  .link-list li {
-    margin-bottom: 0.25rem;
-  }
-  
-  .link-label {
-    display: inline-block;
-    min-width: 7em;
-  }
-  
-  .folder-path-block {
-    margin-top: 0.25rem;
-  }
-  
-  /* =========================================================
-     ナビ
-     ========================================================= */
-  
-  .top-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
+
+  .filter-form .filter-search {
     flex-wrap: wrap;
   }
-  
-  .nav-right {
-    white-space: nowrap;
+
+  .filter-form .filter-search .q-input {
+    min-width: 0;
+    width: 100%;
   }
-  
-  /* =========================================================
+}
+
+
+
+
+
+
+/* 各フィルタが潰れすぎない最低幅（好みで調整OK） */
+.filter-form select {
+  min-width: 240px;
+}
+
+.filter-form #category_select,
+.filter-form #category_input {
+  min-width: 260px;
+}
+
+/* index のキーワードは「グリッドの幅に従う」ようにする */
+.filter-form .q-input {
+  width: 100%;
+  min-width: 240px;
+  /* 画面が狭いときに最低限 */
+}
+
+/* Statusは固定気味に */
+.filter-form .status-select {
+  min-width: 180px;
+}
+
+/* ===== アプリ内ページタイトル（全ページ共通） ===== */
+.app-main h2 {
+  font-size: 1.2rem;
+  margin-top: 0.2em;
+  margin-bottom: 0.6em;
+}
+
+/* ===== index 検索フォーム：狭い画面での並び替え ===== */
+@media (max-width: 900px) {
+  .filter-row-2 {
+    grid-template-columns: 1fr auto;
+    /* キーワード | Status */
+  }
+
+  .filter-row-2 .filter-actions {
+    grid-column: 1 / -1;
+    /* 横いっぱい */
+    justify-content: flex-end;
+    margin-top: 0.4em;
+  }
+}
+
+/* =========================================================
+     テーブル
+     ========================================================= */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+th,
+td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+th {
+  text-align: left;
+  background-color: var(--bg-surface-alt);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 偶数行：ほんのり */
+tbody tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.012);
+}
+
+/* hover：白っぽく“塗る”より、アクセントを薄く載せる方がダークに馴染む */
+tbody tr:hover td {
+  background-color: var(--accent-soft);
+}
+
+/* =========================================================
+     タグ
+     ========================================================= */
+
+.tag {
+  display: inline-block;
+  padding: 8px 20px;
+  margin: 4px 8px;
+  border-radius: 10px;
+  background: #0a3355;
+  font-size: 14px;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+/* =========================================================
+     リンク一覧（detail）
+     ========================================================= */
+
+.link-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0 0 0.5rem 0;
+}
+
+.link-list li {
+  margin-bottom: 0.25rem;
+}
+
+.link-label {
+  display: inline-block;
+  min-width: 7em;
+}
+
+.folder-path-block {
+  margin-top: 0.25rem;
+}
+
+/* =========================================================
+     ナビ
+     ========================================================= */
+
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav-right {
+  white-space: nowrap;
+}
+
+/* =========================================================
      WebViewで文字選択できない問題の対策（基本）
      ========================================================= */
-  
-  body, p, h1, h2, h3, h4, h5, h6, span, a, li, td, th, code, pre, label, small {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-  
-  input, textarea {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-  
-  /* =========================================================
+
+body,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+a,
+li,
+td,
+th,
+code,
+pre,
+label,
+small {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* =========================================================
      Copy UI
      ========================================================= */
-  
-  .copyable {
-    cursor: copy;
-    padding: 2px 6px;
-    border-radius: 6px;
-  }
-  .copyable:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-  .copyable:active {
-    background: rgba(255, 255, 255, 0.14);
-  }
-  
-  /* =========================================================
+
+.copyable {
+  cursor: copy;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.copyable:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.copyable:active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* =========================================================
      Flash messages
      （元の flash-error がライト背景だったのでダーク向けに修正）
      ========================================================= */
-  
-  .flash-messages {
-    margin-bottom: 1em;
-  }
-  
-  .flash-error {
-    background: rgba(255, 107, 107, 0.12);
-    border: 1px solid rgba(255, 107, 107, 0.45);
-    color: #ffd4d4;
-    padding: 0.6em 0.8em;
-    border-radius: 4px;
-  }
-  
-  /* =========================================================
+
+.flash-messages {
+  margin-bottom: 1em;
+}
+
+.flash-error {
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.45);
+  color: #ffd4d4;
+  padding: 0.6em 0.8em;
+  border-radius: 4px;
+}
+
+/* =========================================================
      ヘッダ2行目：フォルダパス行
      ========================================================= */
-  
-  .header-path-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.35rem;
-  }
-  
-  .header-folder-link,
-  .header-temp-link {
-    font-size: 1.05rem;
-    font-weight: 600;
-  }
-  
-  /* 一時保管が主張しすぎないよう調整 */
-  .header-temp-link {
-    opacity: 0.95;
-  }
-  
-  .path-text {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  /* ⚙ を右端へ */
-  .header-settings {
-    margin-left: auto;
-    text-decoration: none;
-    font-size: 0.95rem;
-    opacity: 0.8;
-  }
-  .header-settings:hover {
-    opacity: 1.0;
-  }
-  
-  /* =========================================================
+
+.header-path-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.header-folder-link,
+.header-temp-link {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* 一時保管が主張しすぎないよう調整 */
+.header-temp-link {
+  opacity: 0.95;
+}
+
+.path-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ⚙ を右端へ */
+.header-settings {
+  margin-left: auto;
+  text-decoration: none;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+.header-settings:hover {
+  opacity: 1.0;
+}
+
+/* =========================================================
      コピー完了トースト（控えめ通知）
      ========================================================= */
-  
-  .copy-toast {
-    position: fixed;
-    z-index: 9999;
-  
-    font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 10px;
-  
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-  
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-    pointer-events: none;
-  
-    opacity: 0;
-    transform: translateY(6px);
-    transition:
-      opacity 150ms ease,
-      transform 150ms ease;
-  }
-  
-  .copy-toast.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  
-  /* =========================================================
+
+.copy-toast {
+  position: fixed;
+  z-index: 9999;
+
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 10px;
+
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.copy-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================================================
      detail: リンクを2列に出す箱
      ========================================================= */
-  
-  .link-dual {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 0 0 12px 0;
-  }
-  
-  .link-box {
-    padding: 8px 10px;
-    border: 1px solid #3333;
-    border-radius: 8px;
-  }
-  
-  .link-box ul {
-    margin: 6px 0 0 18px;
-  }
-  
-  /* =========================================================
+
+.link-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 12px 0;
+}
+
+.link-box {
+  padding: 8px 10px;
+  border: 1px solid #3333;
+  border-radius: 8px;
+}
+
+.link-box ul {
+  margin: 6px 0 0 18px;
+}
+
+/* =========================================================
      タグ入力：オートコンプリート候補
      ========================================================= */
-  
-  .tag-suggest-box {
-    background-color: var(--bg-surface);
-    color: var(--text-main);
-  
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-sm);
-  
-    box-shadow: var(--shadow-soft);
-  }
-  
-  .tag-suggest-box > div {
-    padding: 6px 8px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    line-height: 1.4;
-  }
-  
-  .tag-suggest-box > div:hover {
-    background-color: var(--accent-soft);
-  }
-  
-  /* =========================================================
+
+.tag-suggest-box {
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-sm);
+
+  box-shadow: var(--shadow-soft);
+}
+
+.tag-suggest-box>div {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.tag-suggest-box>div:hover {
+  background-color: var(--accent-soft);
+}
+
+/* =========================================================
      OneNoteテンプレ（details/summary 表示）
      ========================================================= */
-  
-  .onenote-template {
-    margin-top: 6px;
-  }
-  
-  .onenote-template summary {
-    padding: 10px 12px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.04);
-    cursor: pointer;
-    user-select: none;
-    list-style: none;
-  }
-  
-  .onenote-template summary::-webkit-details-marker {
-    display: none;
-  }
-  
-  .onenote-template summary:hover {
-    border-color: var(--accent);
-  }
-  
-  .onenote-body-full {
-    margin: 10px 0 0 0;
-    padding: 10px 12px;
-    border: 1px solid #333;
-    border-radius: 8px;
-    background: rgba(0,0,0,0.25);
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-  
+
+.onenote-template {
+  margin-top: 6px;
+}
+
+.onenote-template summary {
+  padding: 10px 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.onenote-template summary::-webkit-details-marker {
+  display: none;
+}
+
+.onenote-template summary:hover {
+  border-color: var(--accent);
+}
+
+.onenote-body-full {
+  margin: 10px 0 0 0;
+  padding: 10px 12px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   Search input（常時ダーク・文字白）
+   ========================================================= */
+
+input[type="search"] {
+  background-color: var(--control-bg) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--control-border);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="search"]::placeholder {
+  color: var(--control-placeholder);
+}
+
+input[type="search"]:focus {
+  background-color: var(--control-bg) !important;
+  /* ← 色を変えない */
+  color: var(--text-main) !important;
+  border-color: var(--control-border-focus);
+}

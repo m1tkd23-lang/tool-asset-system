@@ -3,43 +3,32 @@
 {% extends "base.html" %}
 {% block content %}
 
-<form method="get" class="row">
+<form method="get" class="filter-form">
     <label>Layer:
         <select name="layer" onchange="this.form.submit()">
-            <option value="">(all)</option>
-            {% for l in layers %}
-            <option value="{{l.code}}" {% if current.layer==l.code %}selected{% endif %}>
-                {{l.code}} / {{l.label}}
-            </option>
-            {% endfor %}
+            ...
         </select>
     </label>
 
     <label>Category:
         <select name="category">
-            <option value="">(all)</option>
-            {% for c in categories %}
-            <option value="{{c.code}}" {% if current.category==c.code %}selected{% endif %}>
-                {{c.code}} / {{c.label}}
-            </option>
-            {% endfor %}
+            ...
         </select>
     </label>
 
     <label>Status:
         <select name="status">
-            <option value="">(all)</option>
-            {% for s in ["ACTIVE","ARCHIVED","OBSOLETE","PROVISIONAL"] %}
-            <option value="{{s}}" {% if current.status==s %}selected{% endif %}>{{s}}</option>
-            {% endfor %}
+            ...
         </select>
     </label>
 
     <label>Search:
-        <input name="q" value="{{current.q or ''}}" placeholder="asset/maker/part/name">
+        <div class="search-inline">
+            <input type="search" name="q" class="q-input" value="{{current.q or ''}}"
+                placeholder="asset/maker/part/name" autocomplete="off">
+            <button type="submit">Filter</button>
+        </div>
     </label>
-
-    <button type="submit">Filter</button>
 </form>
 
 <table>
