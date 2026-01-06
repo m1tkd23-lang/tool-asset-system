@@ -1,9 +1,16 @@
-//src/tool_asset_system/web/static/tooling_lists_new.js
-
+// src/tool_asset_system/web/static/tooling_lists_new.js
 (() => {
     "use strict";
 
-    const STORE_KEY = "tool-asset-system:tooling_list_new:selected_asms:v1";
+    const ctx = window.__TL_CTX__ || { mode: "new", list_code: "" };
+    const mode = ctx.mode || "new";
+    const listCode = ctx.list_code || "";
+
+    // ★ listごとにキーを分ける（編集時に他listの選択と混ざらない）
+    const STORE_KEY =
+        mode === "edit" && listCode
+            ? `tool-asset-system:tooling_list_edit:${listCode}:selected_asms:v1`
+            : "tool-asset-system:tooling_list_new:selected_asms:v1";
 
     /** @typedef {{assembly_code:string, tool_no:string, qty:number}} SelAsm */
 
@@ -46,7 +53,9 @@
         const s = (v ?? "").toString().trim();
         if (!s) return 1;
         const n = Number(s);
-        return Number.isFinite(n) && n > 0 ? n : 1;
+        // qtyは整数運用（あなたの要望）
+        const m = Math.floor(Number.isFinite(n) && n > 0 ? n : 1);
+        return m > 0 ? m : 1;
     }
 
     function setRowSelected(tr, selected) {
@@ -132,38 +141,24 @@
         hiddenBox.appendChild(inp);
     }
 
-    function showToast(message) {
-        const el = document.createElement("div");
-        el.className = "copy-toast";
-        el.textContent = message;
-        document.body.appendChild(el);
-        el.style.top = "14px";
-        el.style.right = "14px";
-        requestAnimationFrame(() => el.classList.add("is-visible"));
-        window.setTimeout(() => {
-            el.classList.remove("is-visible");
-            window.setTimeout(() => el.remove(), 250);
-        }, 1400);
-    }
+    // ★ 編集初回：DBの既存itemsをbootstrapしてstoreへ
+    function bootstrapFromServerIfNeeded() {
+        const boot = window.__TL_BOOTSTRAP__ || [];
+        if (!Array.isArray(boot) || boot.length === 0) return;
 
-    function detectCreatedCode() {
-        const url = new URL(window.location.href);
-        const created = url.searchParams.get("created");
-        if (created) return created;
+        // すでにstoreに何かあるなら、ユーザー作業優先で上書きしない
+        if (Object.keys(store).length > 0) return;
 
-        const flashRoot = document.querySelector(".flash-messages") || document.body;
-        const text = (flashRoot.textContent || "").trim();
-        const m = text.match(/Created:\s*(TL_\d+)/);
-        if (m) return m[1];
-
-        return null;
-    }
-
-    function cleanupCreatedParam() {
-        const url = new URL(window.location.href);
-        if (!url.searchParams.has("created")) return;
-        url.searchParams.delete("created");
-        window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+        for (const it of boot) {
+            const ac = (it.assembly_code || "").toString().trim();
+            if (!ac) continue;
+            store[ac] = {
+                assembly_code: ac,
+                tool_no: (it.tool_no || "").toString().trim(),
+                qty: normQty(it.qty ?? 1),
+            };
+        }
+        saveStore(store);
     }
 
     form.addEventListener("submit", (ev) => {
@@ -175,7 +170,6 @@
             return;
         }
 
-        // tool_no 未入力のチェック（ここで止める：DBのUNIQUEより親切）
         const missing = selected.find((it) => !normToolNo(it.tool_no));
         if (missing) {
             ev.preventDefault();
@@ -185,23 +179,106 @@
 
         clearHiddenBox();
 
-        // 注入
         for (const it of selected) addHidden("selected_assemblies", it.assembly_code);
         for (const it of selected) {
             addHidden(`tool_no_${it.assembly_code}`, it.tool_no);
-            addHidden(`qty_${it.assembly_code}`, String(it.qty ?? 1));
+            addHidden(`qty_${it.assembly_code}`, String(normQty(it.qty ?? 1)));
         }
     });
 
     // init
+    bootstrapFromServerIfNeeded();
     attachHandlers();
     restoreUI();
 
-    const created = detectCreatedCode();
-    if (created) {
-        showToast(`Created: ${created}`);
-        clearStore(store);
+    // newだけ成功toast/clear（editは“詳細に戻る”ので不要）
+    if (mode !== "edit") {
+        function showToast(message) {
+            const el = document.createElement("div");
+            el.className = "copy-toast";
+            el.textContent = message;
+            document.body.appendChild(el);
+            el.style.top = "14px";
+            el.style.right = "14px";
+            requestAnimationFrame(() => el.classList.add("is-visible"));
+            window.setTimeout(() => {
+                el.classList.remove("is-visible");
+                window.setTimeout(() => el.remove(), 250);
+            }, 1400);
+        }
+
+        function detectCreatedCode() {
+            const url = new URL(window.location.href);
+            const created = url.searchParams.get("created");
+            if (created) return created;
+
+            const flashRoot = document.querySelector(".flash-messages") || document.body;
+            const text = (flashRoot.textContent || "").trim();
+            const m = text.match(/Created:\s*(TL_\d+)/);
+            if (m) return m[1];
+
+            return null;
+        }
+
+        function cleanupCreatedParam() {
+            const url = new URL(window.location.href);
+            if (!url.searchParams.has("created")) return;
+            url.searchParams.delete("created");
+            window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+        }
+
+        function detectReset() {
+            const url = new URL(window.location.href);
+            return url.searchParams.get("reset");
+        }
+
+        function cleanupResetParam() {
+            const url = new URL(window.location.href);
+            if (!url.searchParams.has("reset")) return;
+            url.searchParams.delete("reset");
+            window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+        }
+
+
+        attachHandlers();
+
+        const reset = detectReset();
+        if (reset) {
+            clearStore(store);
+            cleanupResetParam();
+        }
+
         restoreUI();
-        cleanupCreatedParam();
+
+        const created = detectCreatedCode();
+        if (created) {
+            showToast(`Created: ${created}`);
+            clearStore(store);
+
+            // 画面の入力欄も初期化（これが今回の肝）
+            clearInputsOnPage();
+
+            // 念のため：store空で復元（チェック状態の整合）
+            restoreUI();
+
+            cleanupCreatedParam();
+        }
+
+        function clearInputsOnPage() {
+            const rows = document.querySelectorAll(".pick-asm-table tbody tr");
+            rows.forEach((tr) => {
+                if (!(tr instanceof HTMLTableRowElement)) return;
+
+                const chk = tr.querySelector(".pick-check");
+                const toolNoEl = tr.querySelector(".pick-toolno");
+                const qtyEl = tr.querySelector(".pick-qty");
+
+                if (chk && chk instanceof HTMLInputElement) chk.checked = false;
+                setRowSelected(tr, false);
+
+                if (toolNoEl && "value" in toolNoEl) toolNoEl.value = "";
+                if (qtyEl && qtyEl instanceof HTMLInputElement) qtyEl.value = "1";
+            });
+        }
     }
 })();

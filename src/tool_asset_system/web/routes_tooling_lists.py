@@ -1,4 +1,4 @@
-#src/tool_asset_system/web/routes_tooling_lists.py
+# src/tool_asset_system/web/routes_tooling_lists.py
 from __future__ import annotations
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
@@ -12,6 +12,7 @@ from tool_asset_system.services.tooling_lists import (
     add_tooling_list_item,
     remove_tooling_list_item,
     list_tooling_list_items,
+    replace_tooling_list_items,
 )
 
 bp = Blueprint("tooling_lists", __name__)
@@ -24,6 +25,9 @@ def tooling_lists_list():
     return render_template("tooling_lists_list.html", rows=rows, current={"q": q})
 
 
+# ============================================================
+# New
+# ============================================================
 @bp.route("/tooling_lists/new", methods=["GET", "POST"])
 def tooling_lists_new():
     # assemblies 検索（GET）
@@ -42,6 +46,10 @@ def tooling_lists_new():
             flash("title が未入力です", "err")
             return render_template(
                 "tooling_lists_new.html",
+                mode="new",
+                list_code=None,
+                tl=None,
+                existing_items=[],
                 current={"q": q},
                 asm_rows=asm_rows,
                 form=request.form,
@@ -52,6 +60,26 @@ def tooling_lists_new():
             flash("選択された ASM がありません（チェックしてください）", "err")
             return render_template(
                 "tooling_lists_new.html",
+                mode="new",
+                list_code=None,
+                tl=None,
+                existing_items=[],
+                current={"q": q},
+                asm_rows=asm_rows,
+                form=request.form,
+                created=created,
+            )
+
+        # tool_no 未入力チェック（親切）
+        missing = [ac for ac in selected_asms if not (request.form.get(f"tool_no_{ac}") or "").strip()]
+        if missing:
+            flash(f"tool_no が未入力です：{missing[0]}", "err")
+            return render_template(
+                "tooling_lists_new.html",
+                mode="new",
+                list_code=None,
+                tl=None,
+                existing_items=[],
                 current={"q": q},
                 asm_rows=asm_rows,
                 form=request.form,
@@ -65,6 +93,7 @@ def tooling_lists_new():
                 tool_no = (request.form.get(f"tool_no_{ac}") or "").strip()
                 qty_s = (request.form.get(f"qty_{ac}") or "1").strip()
                 qty = float(qty_s) if qty_s != "" else 1.0
+
                 add_tooling_list_item(
                     list_code,
                     assembly_code=ac,
@@ -80,6 +109,10 @@ def tooling_lists_new():
 
     return render_template(
         "tooling_lists_new.html",
+        mode="new",
+        list_code=None,
+        tl=None,
+        existing_items=[],
         current={"q": q},
         asm_rows=asm_rows,
         form=request.form,
@@ -87,6 +120,9 @@ def tooling_lists_new():
     )
 
 
+# ============================================================
+# Detail
+# ============================================================
 @bp.get("/tooling_lists/<list_code>")
 def tooling_list_detail(list_code: str):
     try:
@@ -121,3 +157,105 @@ def tooling_list_item_remove(list_code: str, item_id: int):
         flash(str(e), "err")
 
     return redirect(url_for("tooling_lists.tooling_list_detail", list_code=list_code))
+
+
+# ============================================================
+# Edit items (reuse /tooling_lists/new UI)
+# ============================================================
+@bp.route("/tooling_lists/<list_code>/edit", methods=["GET", "POST"])
+def tooling_list_edit(list_code: str):
+    # 既存 TL
+    try:
+        tl = get_tooling_list(list_code)
+    except Exception:
+        abort(404)
+
+    # assemblies 検索（GET）
+    q = request.values.get("q") or ""
+    asm_rows = list_assemblies(q=q or None, limit=500)
+
+    # 既存 items（bootstrap用）
+    existing_items = list_tooling_list_items(list_code, limit=500)
+
+    if request.method == "POST":
+        title = (request.form.get("title") or "").strip()
+        note = (request.form.get("note") or "").strip() or None
+
+        selected_asms = request.form.getlist("selected_assemblies")
+
+        if not title:
+            flash("title が未入力です", "err")
+            return render_template(
+                "tooling_lists_new.html",
+                mode="edit",
+                list_code=list_code,
+                tl=tl,
+                existing_items=existing_items,
+                current={"q": q},
+                asm_rows=asm_rows,
+                form=request.form,
+                created=None,
+            )
+
+        if not selected_asms:
+            flash("選択された ASM がありません（チェックしてください）", "err")
+            return render_template(
+                "tooling_lists_new.html",
+                mode="edit",
+                list_code=list_code,
+                tl=tl,
+                existing_items=existing_items,
+                current={"q": q},
+                asm_rows=asm_rows,
+                form=request.form,
+                created=None,
+            )
+
+        # tool_no 未入力チェック（親切）
+        missing = [ac for ac in selected_asms if not (request.form.get(f"tool_no_{ac}") or "").strip()]
+        if missing:
+            flash(f"tool_no が未入力です：{missing[0]}", "err")
+            return render_template(
+                "tooling_lists_new.html",
+                mode="edit",
+                list_code=list_code,
+                tl=tl,
+                existing_items=existing_items,
+                current={"q": q},
+                asm_rows=asm_rows,
+                form=request.form,
+                created=None,
+            )
+
+        # payload 組み立て（全置換）
+        new_items = []
+        for ac in selected_asms:
+            tool_no = (request.form.get(f"tool_no_{ac}") or "").strip()
+            qty_s = (request.form.get(f"qty_{ac}") or "1").strip()
+            qty = float(qty_s) if qty_s != "" else 1.0
+            new_items.append({"assembly_code": ac, "tool_no": tool_no, "qty": qty})
+
+        try:
+            # meta更新
+            update_tooling_list(list_code, title=title, note=note)
+
+            # items全置換
+            replace_tooling_list_items(list_code, items=new_items)
+
+            flash("Saved.", "ok")
+            return redirect(url_for("tooling_lists.tooling_list_detail", list_code=list_code))
+        except Exception as e:
+            flash(str(e), "err")
+
+    # GET
+    return render_template(
+        "tooling_lists_new.html",
+        mode="edit",
+        list_code=list_code,
+        tl=tl,
+        existing_items=existing_items,
+        current={"q": q},
+        asm_rows=asm_rows,
+        form=request.form,
+        created=None,
+    )

@@ -1,4 +1,4 @@
-#src/tool_asset_system/services/tooling_lists.py
+# src/tool_asset_system/services/tooling_lists.py
 from __future__ import annotations
 
 import os
@@ -173,6 +173,78 @@ def remove_tooling_list_item(list_code: str, *, item_id: int) -> None:
         )
         if cur.rowcount != 1:
             raise ValueError(f"tooling_list_item not found: id={item_id} in {list_code}")
+
+        con.commit()
+
+
+def replace_tooling_list_items(
+    list_code: str,
+    *,
+    items: list[dict[str, Any]],
+) -> None:
+    """
+    Replace tooling_list_items entirely for a tooling list.
+    items: [{"assembly_code": "...", "tool_no": "...", "qty": 1.0}, ...]
+    Enforces:
+      - tool_no required
+      - qty > 0
+      - no duplicates (tool_no, assembly_code) inside the payload
+    """
+    # payload validation (friendly errors before hitting UNIQUE)
+    seen_tool_no: set[str] = set()
+    seen_asm: set[str] = set()
+
+    normalized: list[tuple[str, str, float]] = []
+    for it in items:
+        ac = str(it.get("assembly_code") or "").strip()
+        tn = str(it.get("tool_no") or "").strip()
+        qty_raw = it.get("qty", 1.0)
+
+        if ac == "":
+            raise ValueError("assembly_code is required")
+        if tn == "":
+            raise ValueError(f"tool_no is required: {ac}")
+
+        try:
+            qty = float(qty_raw)
+        except Exception:
+            qty = 1.0
+        if qty <= 0:
+            raise ValueError(f"qty must be > 0: {ac}")
+
+        if tn in seen_tool_no:
+            raise ValueError(f"duplicate tool_no in the same list: {tn}")
+        if ac in seen_asm:
+            raise ValueError(f"duplicate assembly_code in the same list: {ac}")
+
+        seen_tool_no.add(tn)
+        seen_asm.add(ac)
+        normalized.append((ac, tn, qty))
+
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        list_id = _get_tooling_list_id(con, list_code)
+
+        # delete all
+        con.execute("DELETE FROM tooling_list_items WHERE tooling_list_id=?", (list_id,))
+
+        # insert all
+        for (assembly_code, tool_no, qty) in normalized:
+            asm_id = _get_assembly_id_by_code(con, assembly_code)
+            con.execute(
+                """
+                INSERT INTO tooling_list_items(
+                  tooling_list_id, assembly_id, tool_no, qty
+                ) VALUES(?,?,?,?)
+                """,
+                (list_id, asm_id, tool_no, float(qty)),
+            )
+
+        # parent updated_at を更新（items変更も更新扱いにする）
+        con.execute(
+            "UPDATE tooling_lists SET updated_at = CURRENT_TIMESTAMP WHERE id=?",
+            (list_id,),
+        )
 
         con.commit()
 
