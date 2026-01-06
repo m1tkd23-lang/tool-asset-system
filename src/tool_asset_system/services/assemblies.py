@@ -1,4 +1,4 @@
-#services/assemblies.py
+# src/tool_asset_system/services/assemblies.py
 from __future__ import annotations
 
 import os
@@ -19,8 +19,8 @@ def _row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
     return {k: row[k] for k in row.keys()}
 
 
-# 並び順（signature生成などで使用）
-ROLE_ORDER = [
+# 並び順（signature生成などで使用） ※ 分岐A: layer_code固定順
+LAYER_ORDER = [
     "HOLDER",
     "SUB_HOLDER",
     "TOOL_BODY",
@@ -31,26 +31,19 @@ ROLE_ORDER = [
 ]
 
 
-def _role_rank(role: str | None) -> int:
-    if not role:
+def _layer_rank(layer_code: str | None) -> int:
+    if not layer_code:
         return 999
     try:
-        return ROLE_ORDER.index(role)  # 0..n
+        return LAYER_ORDER.index(layer_code)
     except ValueError:
-        return 998  # 未知roleは末尾寄り
+        return 998
 
 
 def make_signature_from_items(items: list[dict[str, Any]]) -> str:
-    """
-    items(list_assembly_itemsの戻り)から
-    asset_codeを '_' で連結した signature を作る。
-
-    並び順は「parts.layer_code（レイヤー）」で強制する：
-    HOLDER → SUB_HOLDER → TOOL_BODY → INSERT → SOLID_TOOL → SCREW → ACCESSORY
-    """
     def layer_rank(it: dict[str, Any]) -> int:
         lc = (it.get("layer_code") or "").strip()
-        return _role_rank(lc)  # ROLE_ORDERを流用
+        return _layer_rank(lc)
 
     ordered = sorted(
         items,
@@ -58,6 +51,7 @@ def make_signature_from_items(items: list[dict[str, Any]]) -> str:
     )
     codes = [str(it.get("asset_code")) for it in ordered if it.get("asset_code")]
     return "_".join(codes)
+
 
 # ============================================================
 # Assemblies: basic CRUD
@@ -71,15 +65,11 @@ def add_assembly(
     note: str | None = None,
     actor: str | None = None,
 ) -> str:
-    """
-    Create an assembly and return issued assembly_code (ASM_00000001).
-    display_name can be None/blank. In that case, caller may update later.
-    """
     actor = actor or _actor()
 
     dn = (display_name or "").strip()
     if dn == "":
-        dn = "NEW_ASSEMBLY"  # 仮（後でitems追加後に update_assembly でsignatureに置き換えOK）
+        dn = "NEW_ASSEMBLY"
 
     with connect() as con:
         con.execute("BEGIN IMMEDIATE")
@@ -186,7 +176,7 @@ def update_assembly(
 
 
 # ============================================================
-# Assembly items: add/remove/list
+# Assembly items: add/remove/list/update
 # ============================================================
 
 def _get_assembly_id(con: sqlite3.Connection, assembly_code: str) -> int:
@@ -246,6 +236,59 @@ def add_assembly_item(
         return item_id
 
 
+def update_assembly_item(
+    assembly_code: str,
+    *,
+    item_id: int,
+    qty: float | None = None,
+    role: str | None = None,
+    note: str | None = None,
+    actor: str | None = None,
+) -> None:
+    actor = actor or _actor()
+
+    fields: list[tuple[str, object]] = []
+
+    if qty is not None:
+        if qty <= 0:
+            raise ValueError("qty must be > 0")
+        fields.append(("qty", float(qty)))
+
+    # role は空文字を入れたら NULL 扱いにする
+    if role is not None:
+        r = role.strip()
+        fields.append(("role", r if r != "" else None))
+
+    if note is not None:
+        n = note.strip()
+        fields.append(("note", n if n != "" else None))
+
+    if not fields:
+        return
+
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        assembly_id = _get_assembly_id(con, assembly_code)
+
+        # 対象行がこのassemblyに属していることを保証
+        cur = con.execute(
+            "SELECT 1 FROM assembly_items WHERE id=? AND assembly_id=?",
+            (int(item_id), assembly_id),
+        ).fetchone()
+        if cur is None:
+            raise ValueError(f"assembly item not found: id={item_id} in {assembly_code}")
+
+        set_sql = ", ".join([f"{k} = ?" for k, _ in fields])
+        params = [v for _, v in fields] + [int(item_id), assembly_id]
+
+        con.execute(
+            f"UPDATE assembly_items SET {set_sql} WHERE id=? AND assembly_id=?",
+            params,
+        )
+
+        con.commit()
+
+
 def remove_assembly_item(
     assembly_code: str,
     *,
@@ -273,11 +316,15 @@ def list_assembly_items(
     *,
     limit: int = 500,
 ) -> list[dict[str, Any]]:
+    # ORDER BY を “固定順（分岐A）” に揃える：layer_code → asset_code → ai.id
+    case_parts = " ".join([f"WHEN '{lc}' THEN {i}" for i, lc in enumerate(LAYER_ORDER)])
+    layer_case_sql = f"(CASE p.layer_code {case_parts} ELSE 998 END)"
+
     with connect() as con:
         assembly_id = _get_assembly_id(con, assembly_code)
 
         rows = con.execute(
-            """
+            f"""
             SELECT
               ai.id AS item_id,
               ai.qty,
@@ -298,7 +345,10 @@ def list_assembly_items(
             FROM assembly_items ai
             JOIN parts p ON p.id = ai.part_id
             WHERE ai.assembly_id = ?
-            ORDER BY ai.id
+            ORDER BY
+              {layer_case_sql} ASC,
+              p.asset_code ASC,
+              ai.id ASC
             LIMIT ?
             """,
             (assembly_id, int(limit)),

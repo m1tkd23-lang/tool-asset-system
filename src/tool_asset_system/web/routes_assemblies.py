@@ -13,6 +13,7 @@ from tool_asset_system.services.assemblies import (
     list_assembly_items,
     add_assembly_item,
     remove_assembly_item,
+    update_assembly_item,  # ★追加
     make_signature_from_items,
 )
 
@@ -61,10 +62,6 @@ def _get_label_maps():
 
 
 def _role_choices_by_layer() -> dict[str, list[str]]:
-    """
-    role は「レイヤーに連動したプルダウン」を作るための候補。
-    今は最小限でOK（必要なら増やす）。
-    """
     return {
         "HOLDER": ["HOLDER"],
         "SUB_HOLDER": ["SUB_HOLDER"],
@@ -88,14 +85,6 @@ def assemblies_list():
 
 @bp.route("/assemblies/new", methods=["GET", "POST"])
 def assemblies_new():
-    """
-    New Assembly:
-      - parts を検索して選択（GETパラメータで絞り込み）
-      - ASMを作り、選択したpartsを一括で assembly_items に入れる（POST）
-      - itemsから signature を作って display_name に反映（display_name未入力時）
-      - 成功時は /assemblies/new?created=ASM_xxx に戻す（JSが通知＆リセット）
-    """
-    # ---- parts 検索条件（GETで渡ってくる想定。POSTでも request.values で拾える）
     layer = request.values.get("layer") or ""
     category = request.values.get("category") or ""
     status = request.values.get("status") or "ACTIVE"
@@ -104,7 +93,6 @@ def assemblies_new():
     layers = _get_layers()
     categories = _get_categories_for_layer(layer) if layer else []
 
-    # ---- parts検索結果
     parts_rows = list_parts(
         layer_code=layer or None,
         category_code=category or None,
@@ -113,25 +101,27 @@ def assemblies_new():
         limit=500,
     )
 
-    # ---- labels / roles
     layer_labels, category_labels, status_labels = _get_label_maps()
     role_choices_by_layer = _role_choices_by_layer()
 
-    # ---- 成功通知用（JSが拾う）
-    created = request.args.get("created")  # GETだけ
+    created = request.args.get("created")
 
     if request.method == "POST":
         action = (request.form.get("action") or "").strip() or "create"
         if action != "create":
-            # いまはPOSTはcreate専用の想定（SearchはGETに分離済み）
-            return redirect(url_for("assemblies.assemblies_new", layer=layer, category=category, status=status, q=q))
+            return redirect(
+                url_for(
+                    "assemblies.assemblies_new",
+                    layer=layer, category=category, status=status, q=q
+                )
+            )
 
         display_name = (request.form.get("display_name") or "").strip() or None
         tol_s = (request.form.get("tool_overall_length") or "").strip()
         td_s = (request.form.get("tool_diameter") or "").strip()
         note = (request.form.get("note") or "").strip() or None
 
-        selected_parts = request.form.getlist("selected_parts")  # asset_codeの配列（JSがhiddenで作る）
+        selected_parts = request.form.getlist("selected_parts")
 
         def to_float_or_none(s: str):
             if s == "":
@@ -156,34 +146,29 @@ def assemblies_new():
 
         try:
             code = add_assembly(
-                display_name=display_name,  # Noneなら仮名（services側）
+                display_name=display_name,
                 tool_overall_length=to_float_or_none(tol_s),
                 tool_diameter=to_float_or_none(td_s),
                 note=note,
             )
 
-            # items追加
             for ac in selected_parts:
                 role = (request.form.get(f"role_{ac}") or "").strip() or None
                 qty_s = (request.form.get(f"qty_{ac}") or "1").strip()
                 qty = float(qty_s) if qty_s != "" else 1.0
                 add_assembly_item(code, part_asset_code=ac, qty=qty, role=role)
 
-            # display_name が未入力なら signature を自動反映
             if display_name is None:
                 items = list_assembly_items(code)
                 sig = make_signature_from_items(items)
                 if sig:
                     update_assembly(code, display_name=sig)
 
-            # ✅ ここが重要：成功時は new へ戻し、created を付与
-            # → JSが「通知＋選択解除＋フィルタ初期化」に使う
             flash(f"Created: {code}", "ok")
             return redirect(url_for("assemblies.assemblies_new", created=code, reset=1))
 
         except Exception as e:
             flash(str(e), "err")
-            # fallthrough -> re-render with current state
 
     return render_template(
         "assemblies_new.html",
@@ -210,11 +195,15 @@ def assembly_detail(assembly_code: str):
     items = list_assembly_items(assembly_code, limit=500)
     signature = make_signature_from_items(items)
 
+    layer_labels, category_labels, _status_labels = _get_label_maps()
+
     return render_template(
         "assemblies_detail.html",
         assembly=assembly,
         items=items,
         signature=signature,
+        layer_labels=layer_labels,
+        category_labels=category_labels,
     )
 
 
@@ -242,6 +231,30 @@ def assembly_update(assembly_code: str):
             note=get_optional("note"),
         )
         flash("Updated.", "ok")
+    except Exception as e:
+        flash(str(e), "err")
+
+    return redirect(url_for("assemblies.assembly_detail", assembly_code=assembly_code))
+
+
+@bp.post("/assemblies/<assembly_code>/items/<int:item_id>/update")
+def assembly_item_update(assembly_code: str, item_id: int):
+    role = (request.form.get("role") or "").strip() or None
+
+    qty_s = (request.form.get("qty") or "").strip()
+    if qty_s == "":
+        flash("qty is required", "err")
+        return redirect(url_for("assemblies.assembly_detail", assembly_code=assembly_code))
+
+    try:
+        qty = float(qty_s)
+    except ValueError:
+        flash("qty must be a number", "err")
+        return redirect(url_for("assemblies.assembly_detail", assembly_code=assembly_code))
+
+    try:
+        update_assembly_item(assembly_code, item_id=item_id, role=role, qty=qty)
+        flash("Item updated.", "ok")
     except Exception as e:
         flash(str(e), "err")
 

@@ -762,3 +762,97 @@ input[type="search"]:focus {
   border-radius: 4px;
   margin-bottom: 8px;
 }
+
+/* =========================================================
+   assemblies detail: inline row form
+   ========================================================= */
+
+.inline-form {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+}
+
+.inline-input {
+  width: 110px;
+  max-width: 110px;
+  padding: 4px 6px;
+}
+
+.inline-input-num {
+  width: 90px;
+  max-width: 90px;
+  text-align: right;
+}
+
+.cell-actions {
+  white-space: nowrap;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* optional: badge (if not already defined elsewhere) */
+.badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* =========================================================
+   assemblies detail: meta form should be vertical
+   ========================================================= */
+
+.meta-form {
+  grid-template-columns: 1fr;
+  /* 3列 → 1列に上書き */
+  max-width: 520px;
+  /* 左パネル幅に合わせて暴れないように */
+}
+
+.meta-form input[type="text"],
+.meta-form input[type="number"],
+.meta-form textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* label の見た目を「Display name：」っぽく */
+.meta-form label {
+  font-weight: 700;
+}
+
+.meta-form label::after {
+  content: "：";
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* textarea を少し安定させる（任意） */
+.meta-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+/* Display name textarea: wrap long signature nicely */
+.meta-form .meta-textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  min-height: 42px;
+  resize: vertical;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  font-family: "Consolas", "SFMono-Regular", monospace;
+}

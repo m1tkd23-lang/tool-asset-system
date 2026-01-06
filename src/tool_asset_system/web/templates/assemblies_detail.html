@@ -1,17 +1,26 @@
-<!--assemblies_detail.html-->
+<!-- templates/assemblies_detail.html -->
 
 {% extends "base.html" %}
 {% block content %}
 
 <h2>
-    <span class="copyable" data-copy="{{ assembly.assembly_code }} {{ assembly.display_name }}">
-        {{ assembly.assembly_code }} / {{ assembly.display_name }}
+    <span class="copyable" data-copy="{{ assembly.assembly_code }} {{ assembly.display_name or '' }}">
+        {{ assembly.assembly_code }}
+        {% if assembly.display_name %}
+        / {{ assembly.display_name }}
+        {% endif %}
     </span>
 </h2>
 
 <p class="text-muted">
     <strong>Signature:</strong>
-    <code>{{ signature }}</code>
+    <code class="copyable" data-copy="{{ signature }}">{{ signature }}</code>
+</p>
+
+<p class="text-muted">
+    <strong>Created:</strong> {{ assembly.created_at or "-" }}
+    &nbsp; / &nbsp;
+    <strong>Updated:</strong> {{ assembly.updated_at or "-" }}
 </p>
 
 <div class="detail-actions">
@@ -19,47 +28,64 @@
 </div>
 
 <div class="detail-grid">
+    <!-- =========================
+       Assembly meta
+       ========================= -->
     <div class="panel">
         <div class="panel-header">
             <h3>Assembly meta</h3>
         </div>
 
         <form method="post" action="{{ url_for('assemblies.assembly_update', assembly_code=assembly.assembly_code) }}"
-            class="edit-form">
-            <label>Display name
-                <input type="text" name="display_name" value="{{ assembly.display_name }}">
+            class="edit-form meta-form">
+            <label>Display name:
+                <textarea name="display_name" rows="2"
+                    class="meta-textarea">{{ assembly.display_name or '' }}</textarea>
             </label>
 
-            <label>Tool diameter
+            <label>Tool diameter:
                 <input type="number" step="0.001" name="tool_diameter" value="{{ assembly.tool_diameter or '' }}">
             </label>
 
-            <label>Overall length
+            <label>Overall length:
                 <input type="number" step="0.001" name="tool_overall_length"
                     value="{{ assembly.tool_overall_length or '' }}">
             </label>
 
-            <label class="edit-note">Note
-                <textarea name="note" rows="4">{{ assembly.note or '' }}</textarea>
+            <label class="edit-note">Note:
+                <textarea name="note" rows="5">{{ assembly.note or '' }}</textarea>
             </label>
 
             <div class="form-actions">
                 <button type="submit" class="btn">Update</button>
             </div>
         </form>
+
+        <hr>
+
+        <p class="text-muted">
+            <strong>Order rule:</strong> Items are displayed in fixed business order
+            (Layer order + asset_code). Manual reordering is not supported in Phase A.
+        </p>
     </div>
 
+    <!-- =========================
+       Items
+       ========================= -->
     <div class="panel">
         <div class="panel-header">
             <h3>Items</h3>
         </div>
 
         <div class="table-scroll">
-            <table class="kv-table">
+            <table>
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>item_id</th>
                         <th>asset_code</th>
+                        <th>layer</th>
+                        <th>category</th>
                         <th>role</th>
                         <th>qty</th>
                         <th>maker</th>
@@ -68,29 +94,81 @@
                         <th></th>
                     </tr>
                 </thead>
+
                 <tbody>
                     {% for it in items %}
                     <tr>
+                        <td class="text-muted">{{ loop.index }}</td>
                         <td>{{ it.item_id }}</td>
-                        <td><code>{{ it.asset_code }}</code></td>
-                        <td>{{ it.role or '' }}</td>
-                        <td>{{ it.qty }}</td>
-                        <td>{{ it.maker }}</td>
-                        <td>{{ it.part_no }}</td>
-                        <td>{{ it.display_name }}</td>
+
+                        <td>
+                            <a class="btn-link" href="{{ url_for('parts.part_detail', asset_code=it.asset_code) }}">
+                                <code class="copyable" data-copy="{{ it.asset_code }}">{{ it.asset_code }}</code>
+                            </a>
+                        </td>
+
+                        <td>
+                            {{ it.layer_code }}
+                            {% set ll = layer_labels.get(it.layer_code, "") %}
+                            {% if ll %} / {{ ll }}{% endif %}
+                        </td>
+
+                        <td>
+                            {% if it.category_code %}
+                            {{ it.category_code }}
+                            {% set cl = category_labels.get(it.category_code, "") %}
+                            {% if cl %} / {{ cl }}{% endif %}
+                            {% else %}
+                            (free)
+                            {% endif %}
+                            {% if it.category_free_text %}
+                            <span class="badge">{{ it.category_free_text }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- row update form: role / qty -->
                         <td>
                             <form method="post"
+                                action="{{ url_for('assemblies.assembly_item_update', assembly_code=assembly.assembly_code, item_id=it.item_id) }}"
+                                class="inline-form">
+                                <input type="text" name="role" value="{{ it.role or '' }}" placeholder="role"
+                                    class="inline-input">
+                        </td>
+
+                        <td>
+                            <input type="number" name="qty" value="{{ it.qty }}" min="0.001" step="0.001"
+                                class="inline-input inline-input-num">
+                        </td>
+
+                        <td>{{ it.maker or '' }}</td>
+                        <td>{{ it.part_no or '' }}</td>
+                        <td>{{ it.display_name or '' }}</td>
+
+                        <td class="cell-actions">
+                            <button type="submit" class="btn">Save</button>
+                            </form>
+
+                            <form method="post"
                                 action="{{ url_for('assemblies.assembly_item_remove', assembly_code=assembly.assembly_code, item_id=it.item_id) }}"
-                                onsubmit="return confirm('Remove this item?');">
+                                onsubmit="return confirm('Remove this item?');" class="inline-form">
                                 <button type="submit" class="btn">Remove</button>
                             </form>
                         </td>
                     </tr>
                     {% endfor %}
+
+                    {% if items|length == 0 %}
+                    <tr>
+                        <td colspan="11" class="text-muted">No items in this assembly.</td>
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
 
+        <p class="text-muted" style="margin-top: 10px;">
+            Display order is fixed and matches signature generation.
+        </p>
     </div>
 </div>
 
