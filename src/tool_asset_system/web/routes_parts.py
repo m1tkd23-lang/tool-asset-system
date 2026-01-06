@@ -1,25 +1,23 @@
-#src/tool_asset_system/web/routes_parts.py
+# src/tool_asset_system/web/routes_parts.py
 
 from __future__ import annotations
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 
 from tool_asset_system.db.db import connect
-from tool_asset_system.services.parts import update_part, archive_part
+from tool_asset_system.services.parts import update_part, archive_part, restore_part
 from tool_asset_system.services.parts import add_part, list_parts
-from tool_asset_system.services.parts import restore_part
-
-from flask import abort
-
 
 
 bp = Blueprint("parts", __name__)
+
 
 def _get_layers():
     with connect() as con:
         return con.execute(
             "SELECT code,label,allow_free_category FROM layers ORDER BY sort_order"
         ).fetchall()
+
 
 def _get_categories_for_layer(layer_code: str):
     with connect() as con:
@@ -33,9 +31,32 @@ def _get_categories_for_layer(layer_code: str):
             (layer_code,),
         ).fetchall()
 
+
+def _get_label_maps():
+    """
+    表示用：code -> label の辞書をまとめて返す。
+    DB上のSSOT（辞書テーブル）をそのままUIへ渡す。
+    """
+    with connect() as con:
+        layer_labels = {
+            r["code"]: r["label"]
+            for r in con.execute("SELECT code,label FROM layers").fetchall()
+        }
+        category_labels = {
+            r["code"]: r["label"]
+            for r in con.execute("SELECT code,label FROM categories").fetchall()
+        }
+        status_labels = {
+            r["code"]: r["label"]
+            for r in con.execute("SELECT code,label FROM statuses").fetchall()
+        }
+    return layer_labels, category_labels, status_labels
+
+
 @bp.get("/")
 def home():
     return redirect(url_for("parts.parts_list"))
+
 
 @bp.get("/parts")
 def parts_list():
@@ -50,18 +71,24 @@ def parts_list():
     layers = _get_layers()
     categories = _get_categories_for_layer(layer) if layer else []
 
+    layer_labels, category_labels, status_labels = _get_label_maps()
+
     return render_template(
         "parts_list.html",
         rows=rows,
         layers=layers,
         categories=categories,
         current=dict(layer=layer, category=category, status=status, q=q),
+        layer_labels=layer_labels,
+        category_labels=category_labels,
+        status_labels=status_labels,
     )
 
 
 @bp.route("/parts/new", methods=["GET", "POST"])
 def parts_new():
     layers = _get_layers()
+    layer_labels, category_labels, status_labels = _get_label_maps()
 
     if request.method == "POST":
         layer = (request.form.get("layer") or "").strip()
@@ -100,7 +127,11 @@ def parts_new():
         categories=categories,
         selected_layer=selected_layer,
         form=request.form,
+        layer_labels=layer_labels,
+        category_labels=category_labels,
+        status_labels=status_labels,
     )
+
 
 @bp.get("/parts/<asset_code>")
 def part_detail(asset_code: str):
@@ -132,7 +163,6 @@ def part_detail(asset_code: str):
         want = ["id", "action", "target_code", "actor", "created_at"]
         select_cols = [c for c in want if c in cols]
         if not select_cols:
-            # 最低限の保険：テーブルがあっても想定列が無い場合
             logs = []
         else:
             sql = f"""
@@ -144,12 +174,21 @@ def part_detail(asset_code: str):
             """
             logs = con.execute(sql, (asset_code,)).fetchall()
 
-    return render_template("parts_detail.html", part=part, logs=logs)
+    layer_labels, category_labels, status_labels = _get_label_maps()
+
+    return render_template(
+        "parts_detail.html",
+        part=part,
+        logs=logs,
+        layer_labels=layer_labels,
+        category_labels=category_labels,
+        status_labels=status_labels,
+    )
+
 
 @bp.route("/parts/<asset_code>/edit", methods=["GET", "POST"])
 def part_edit(asset_code: str):
     if request.method == "POST":
-        # 空欄は「変更なし」にしたいので、フォーム値の取り扱いを丁寧に
         def get_optional(name: str):
             v = request.form.get(name)
             if v is None:
@@ -184,12 +223,21 @@ def part_edit(asset_code: str):
         flash("Updated.", "ok")
         return redirect(url_for("parts.part_detail", asset_code=asset_code))
 
-    # GET: 現在値を読み込み
     with connect() as con:
         part = con.execute("SELECT * FROM parts WHERE asset_code=?", (asset_code,)).fetchone()
     if part is None:
         abort(404)
-    return render_template("parts_edit.html", part=part)
+
+    layer_labels, category_labels, status_labels = _get_label_maps()
+
+    return render_template(
+        "parts_edit.html",
+        part=part,
+        layer_labels=layer_labels,
+        category_labels=category_labels,
+        status_labels=status_labels,
+    )
+
 
 @bp.post("/parts/<asset_code>/archive")
 def part_archive(asset_code: str):
@@ -197,15 +245,14 @@ def part_archive(asset_code: str):
     flash("Archived.", "ok")
     return redirect(url_for("parts.part_detail", asset_code=asset_code))
 
+
 @bp.get("/parts/archived")
 def parts_archived():
-    # archived だけ表示（layer/category/q フィルタは既存と同様でOK）
     layer = request.args.get("layer") or ""
     category = request.args.get("category") or ""
     q = request.args.get("q") or ""
 
     with connect() as con:
-        layers = con.execute("SELECT code,label FROM layers ORDER BY sort_order, code").fetchall()
         categories = _get_categories_for_layer(layer) if layer else []
 
         sql = """
@@ -227,16 +274,21 @@ def parts_archived():
             params += [like, like, like, like]
 
         sql += " ORDER BY updated_at DESC, asset_code"
-
         rows = con.execute(sql, params).fetchall()
+
+    layer_labels, category_labels, status_labels = _get_label_maps()
 
     return render_template(
         "parts_archived.html",
         rows=rows,
-        layers = _get_layers(),
+        layers=_get_layers(),
         categories=categories,
         current={"layer": layer, "category": category, "status": "ARCHIVED", "q": q},
+        layer_labels=layer_labels,
+        category_labels=category_labels,
+        status_labels=status_labels,
     )
+
 
 @bp.post("/parts/<asset_code>/restore")
 def part_restore(asset_code: str):

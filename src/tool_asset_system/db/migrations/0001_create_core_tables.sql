@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS id_sequences (
 CREATE TABLE IF NOT EXISTS parts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-  -- 例: INSERT-00000012
+  -- 例: INSERT_00000012
   asset_code TEXT NOT NULL UNIQUE,
 
   -- 辞書コード（DB辞書に存在する想定だが、FKはまだ強制しない）

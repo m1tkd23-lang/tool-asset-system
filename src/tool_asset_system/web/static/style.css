@@ -120,6 +120,31 @@ textarea[readonly] {
   font-size: 0.9rem;
 }
 
+/* ブラウザに「ダークUIで描画してね」と伝える（selectの白化対策に効く） */
+body.app-body {
+  color-scheme: dark;
+}
+
+/* selectのドロップダウン側（option/optgroup）が白背景になる問題を潰す */
+select option,
+select optgroup {
+  background-color: var(--control-bg);
+  color: var(--control-text);
+}
+
+/* type=search が勝手に白背景になるのを潰す（Chrome系対策） */
+input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--control-bg);
+  color: var(--control-text);
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+
 /* =========================================================
      フォーム幅制御（new / edit 共通）
      ========================================================= */
@@ -162,28 +187,28 @@ textarea[readonly] {
 
 .filter-form {
   display: grid;
-  grid-template-columns: 240px 280px 200px;
-  /* 1行目の3列 */
+  grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.4fr) minmax(220px, 0.9fr);
   gap: 10px 14px;
   align-items: end;
-  max-width: 1180px;
-  /* app-root内なので保険 */
 }
 
+/* label内は縦積み */
 .filter-form label {
   display: grid;
   gap: 6px;
   font-weight: 600;
 }
 
+/* gridに幅を任せる（min-width固定は外す） */
 .filter-form select,
 .filter-form input[type="search"],
 .filter-form input[type="text"] {
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
 }
 
-/* 2行目（Search行）を横いっぱい使う */
+/* 2行目：Search + Button */
 .filter-form .filter-search {
   grid-column: 1 / -1;
   display: flex;
@@ -193,8 +218,12 @@ textarea[readonly] {
 
 .filter-form .filter-search .q-input {
   flex: 1 1 auto;
-  min-width: 240px;
+  min-width: 0;
 }
+
+
+
+
 
 .filter-form .filter-search button {
   flex: 0 0 auto;
@@ -227,20 +256,6 @@ textarea[readonly] {
   }
 }
 
-
-
-
-
-
-/* 各フィルタが潰れすぎない最低幅（好みで調整OK） */
-.filter-form select {
-  min-width: 240px;
-}
-
-.filter-form #category_select,
-.filter-form #category_input {
-  min-width: 260px;
-}
 
 /* index のキーワードは「グリッドの幅に従う」ようにする */
 .filter-form .q-input {
@@ -393,6 +408,19 @@ textarea {
   -webkit-user-select: text;
   user-select: text;
 }
+
+/* --- select のドロップダウン候補（option）が見えない対策 --- */
+select {
+  color: var(--control-text);
+  background-color: var(--control-bg);
+}
+
+/* これが本命：Windows/Chromeで option が黒文字のままになるのを潰す */
+select option {
+  color: var(--control-text);
+  background-color: var(--control-bg);
+}
+
 
 /* =========================================================
      Copy UI
@@ -604,4 +632,124 @@ input[type="search"]:focus {
   /* ← 色を変えない */
   color: var(--text-main) !important;
   border-color: var(--control-border-focus);
+}
+
+/* ===== detail page layout ===== */
+.detail-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 6px 0 10px;
+}
+
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--control-border);
+  background: var(--control-bg);
+  color: var(--control-text);
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.btn-link {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  border-color: var(--control-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 520px) 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px;
+}
+
+.panel-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.05rem;
+}
+
+/* key-value table */
+.kv-table th {
+  width: 160px;
+  white-space: nowrap;
+}
+
+/* logs table: 横に長くなりがちなのでスクロール */
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* ===== edit/new form layout ===== */
+.edit-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 12px 14px;
+  align-items: start;
+  max-width: 980px;
+}
+
+.edit-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+/* Note は横幅を使う（2〜3列ぶん） */
+.edit-form .edit-note {
+  grid-column: 1 / -1;
+}
+
+/* actions は右寄せ */
+.edit-form .form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .edit-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+#sig_preview code {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }

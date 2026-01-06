@@ -6,29 +6,42 @@
 <form method="get" class="filter-form">
     <label>Layer:
         <select name="layer" onchange="this.form.submit()">
-            ...
+            <option value="">(all)</option>
+            {% for l in layers %}
+            <option value="{{l.code}}" {% if current.layer==l.code %}selected{% endif %}>
+                {{l.code}} / {{l.label}}
+            </option>
+            {% endfor %}
         </select>
     </label>
 
     <label>Category:
         <select name="category">
-            ...
+            <option value="">(all)</option>
+            {% for c in categories %}
+            <option value="{{c.code}}" {% if current.category==c.code %}selected{% endif %}>
+                {{c.code}} / {{c.label}}
+            </option>
+            {% endfor %}
         </select>
     </label>
 
     <label>Status:
         <select name="status">
-            ...
+            <option value="">(all)</option>
+            {% for s in ["ACTIVE","ARCHIVED","OBSOLETE","PROVISIONAL"] %}
+            <option value="{{s}}" {% if current.status==s %}selected{% endif %}>{{s}}</option>
+            {% endfor %}
         </select>
     </label>
 
-    <label>Search:
-        <div class="search-inline">
+    <div class="filter-search">
+        <label>Search:
             <input type="search" name="q" class="q-input" value="{{current.q or ''}}"
                 placeholder="asset/maker/part/name" autocomplete="off">
-            <button type="submit">Filter</button>
-        </div>
-    </label>
+        </label>
+        <button type="submit">Filter</button>
+    </div>
 </form>
 
 <table>
@@ -51,10 +64,28 @@
                     <code>{{ r.asset_code }}</code>
                 </a>
             </td>
-            <td>{{r.layer_code}}</td>
-            <td>{{r.category_code or "(free)"}}{% if r.category_free_text %} <span
-                    class="badge">{{r.category_free_text}}</span>{% endif %}</td>
-            <td>{{r.status}}</td>
+            <td>
+                {{ r.layer_code }}
+                {% set ll = layer_labels.get(r.layer_code, "") %}
+                {% if ll %} / {{ ll }}{% endif %}
+            </td>
+            <td>
+                {% if r.category_code %}
+                {{ r.category_code }}
+                {% set cl = category_labels.get(r.category_code, "") %}
+                {% if cl %} / {{ cl }}{% endif %}
+                {% else %}
+                (free)
+                {% endif %}
+                {% if r.category_free_text %}
+                <span class="badge">{{ r.category_free_text }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {{ r.status }}
+                {% set sl = status_labels.get(r.status, "") %}
+                {% if sl %} / {{ sl }}{% endif %}
+            </td>
             <td>{{r.maker}}</td>
             <td>{{r.part_no}}</td>
             <td>{{r.display_name}}</td>

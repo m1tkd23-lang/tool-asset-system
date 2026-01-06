@@ -1,0 +1,46 @@
+<!--assemblies_list.html-->
+
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Assemblies</h2>
+
+<form method="get" class="filter-form">
+    <label>Search:
+        <input type="search" name="q" class="q-input" value="{{ current.q or '' }}" placeholder="code/name/note"
+            autocomplete="off">
+    </label>
+
+    <div class="filter-search">
+        <button type="submit">Filter</button>
+    </div>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>assembly_code</th>
+            <th>display_name</th>
+            <th>tool_diameter</th>
+            <th>tool_overall_length</th>
+            <th>updated_at</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in rows %}
+        <tr>
+            <td>
+                <a href="{{ url_for('assemblies.assembly_detail', assembly_code=r.assembly_code) }}">
+                    <code>{{ r.assembly_code }}</code>
+                </a>
+            </td>
+            <td>{{ r.display_name }}</td>
+            <td>{{ r.tool_diameter or "" }}</td>
+            <td>{{ r.tool_overall_length or "" }}</td>
+            <td>{{ r.updated_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -19,6 +19,9 @@ py -3.12 -m venv .venv
 python .\apps\main.py
 
 
+$env:PYTHONPATH = (Resolve-Path .\src).Path
+>> python .\apps\web.py
+
 
 ★これはDBを更新するときに
 ################################################################################################

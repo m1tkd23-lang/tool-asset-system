@@ -1,50 +1,53 @@
-<!--parts_edit.html-->
+<!-- templates/parts_edit.html -->
 {% extends "base.html" %}
 {% block content %}
 
-<h3>Edit Part</h3>
-<p><code>{{ part.asset_code }}</code> / {{ part.layer_code }} / {{ part.maker }} / {{ part.part_no }}</p>
+<h2>Edit Part</h2>
+<p class="text-muted">
+    <code>{{ part.asset_code }}</code>
+    / {{ part.layer_code }} / {{ part.maker }} / {{ part.part_no }}
+</p>
 
-<form method="post" class="row" style="align-items:flex-start; gap:16px;">
-    <label>Display name<br>
-        <input name="display_name" value="{{ part.display_name }}">
+<form method="post" class="edit-form">
+    <label>Display name
+        <input type="text" name="display_name" value="{{ part.display_name }}">
     </label>
 
-    <label>Maker part name<br>
-        <input name="maker_part_name" value="{{ part.maker_part_name or '' }}">
+    <label>Maker part name
+        <input type="text" name="maker_part_name" value="{{ part.maker_part_name or '' }}">
     </label>
 
-    <label>Stock qty<br>
-        <input name="stock_qty" value="{{ part.stock_qty }}" inputmode="decimal">
+    <label>Stock qty
+        <input type="number" step="any" name="stock_qty" value="{{ part.stock_qty }}">
     </label>
 
-    <label>Stock unit<br>
-        <input name="stock_unit" value="{{ part.stock_unit }}">
+    <label>Stock unit
+        <input type="text" name="stock_unit" value="{{ part.stock_unit }}">
     </label>
 
-    <label>Unit price<br>
-        <input name="unit_price" value="{{ part.unit_price or '' }}" inputmode="decimal">
+    <label>Unit price
+        <input type="number" step="any" name="unit_price" value="{{ part.unit_price or '' }}">
     </label>
 
-    <label>Supplier<br>
-        <input name="supplier" value="{{ part.supplier or '' }}">
+    <label>Supplier
+        <input type="text" name="supplier" value="{{ part.supplier or '' }}">
     </label>
 
-    <label>Lead time days<br>
-        <input name="lead_time_days" value="{{ part.lead_time_days or '' }}" inputmode="numeric">
+    <label>Lead time days
+        <input type="number" step="1" name="lead_time_days" value="{{ part.lead_time_days or '' }}">
     </label>
 
-    <label>Min stock qty<br>
-        <input name="min_stock_qty" value="{{ part.min_stock_qty or '' }}" inputmode="decimal">
+    <label>Min stock qty
+        <input type="number" step="any" name="min_stock_qty" value="{{ part.min_stock_qty or '' }}">
     </label>
 
-    <label style="min-width:420px;">Note<br>
-        <input name="note" value="{{ part.note or '' }}" style="width:100%;">
+    <label class="edit-note">Note
+        <textarea name="note" rows="3">{{ part.note or '' }}</textarea>
     </label>
 
-    <div style="align-self:flex-end;">
-        <button type="submit">Save</button>
-        <a href="{{ url_for('parts.part_detail', asset_code=part.asset_code) }}">Cancel</a>
+    <div class="form-actions">
+        <button type="submit" class="btn">Save</button>
+        <a class="btn-link" href="{{ url_for('parts.part_detail', asset_code=part.asset_code) }}">Cancel</a>
     </div>
 </form>
 

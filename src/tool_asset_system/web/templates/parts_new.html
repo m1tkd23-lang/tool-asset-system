@@ -1,13 +1,11 @@
-<!--templates/parts_new.html-->
-
+<!-- templates/parts_new.html -->
 {% extends "base.html" %}
 {% block content %}
 
-<h3>New Part</h3>
+<h2>New Part</h2>
 
-<form method="post" class="row" style="align-items:flex-start;">
-    <div>
-        <div>Layer</div>
+<form method="post" class="edit-form">
+    <label>Layer
         <select id="layer" name="layer">
             {% for l in layers %}
             <option value="{{l.code}}" {% if selected_layer==l.code %}selected{% endif %}>
@@ -15,58 +13,49 @@
             </option>
             {% endfor %}
         </select>
-    </div>
+    </label>
 
-    <div>
-        <div>Category（辞書）</div>
+    <label>Category（辞書）
         <select id="category" name="category">
             <option value="">(none)</option>
             {% for c in categories %}
             <option value="{{c.code}}">{{c.code}} / {{c.label}}</option>
             {% endfor %}
         </select>
-        <div style="font-size:12px;color:#666;margin-top:4px;">
-            ※ free許可レイヤーのみ categoryなし可（DBが判定）
-        </div>
-    </div>
+        <small class="text-muted">※ free許可レイヤーのみ categoryなし可（DBが判定）</small>
+    </label>
 
-    <div>
-        <div>Category free text（任意）</div>
-        <input name="category_free" value="{{form.get('category_free','')}}">
-    </div>
+    <label>Category free text（任意）
+        <input type="text" name="category_free" value="{{form.get('category_free','')}}">
+    </label>
 
-    <div>
-        <div>Maker</div>
-        <input name="maker" required value="{{form.get('maker','')}}">
-    </div>
+    <label>Maker
+        <input type="text" name="maker" required value="{{form.get('maker','')}}">
+    </label>
 
-    <div>
-        <div>Part No</div>
-        <input name="part_no" required value="{{form.get('part_no','')}}">
-    </div>
+    <label>Part No
+        <input type="text" name="part_no" required value="{{form.get('part_no','')}}">
+    </label>
 
-    <div>
-        <div>Unit</div>
-        <input name="unit" value="{{form.get('unit','EA')}}">
-    </div>
+    <label>Unit
+        <input type="text" name="unit" value="{{form.get('unit','EA')}}">
+    </label>
 
-    <div>
-        <div>Display name（任意）</div>
-        <input name="name" value="{{form.get('name','')}}">
-    </div>
+    <label>Display name（任意）
+        <input type="text" name="name" value="{{form.get('name','')}}">
+    </label>
 
-    <div>
-        <div>Maker part name（任意）</div>
-        <input name="maker_part_name" value="{{form.get('maker_part_name','')}}">
-    </div>
+    <label>Maker part name（任意）
+        <input type="text" name="maker_part_name" value="{{form.get('maker_part_name','')}}">
+    </label>
 
-    <div style="align-self:flex-end;">
-        <button type="submit">Add</button>
+    <div class="form-actions">
+        <button type="submit" class="btn">Add</button>
     </div>
 </form>
 
 <script>
-    // layer変更時にカテゴリ候補を取り直す（任意だけど便利）
+    // layer変更時にカテゴリ候補を取り直す
     const layerSel = document.getElementById("layer");
     const catSel = document.getElementById("category");
 
@@ -85,6 +74,9 @@
     }
 
     layerSel.addEventListener("change", refreshCategories);
+
+    // 初期表示のselected_layerに合わせてカテゴリを同期したい場合はこれもON
+    // refreshCategories();
 </script>
 
 {% endblock %}

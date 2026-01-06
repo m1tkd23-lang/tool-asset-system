@@ -1,0 +1,272 @@
+工具資産管理システム 引き継ぎ資料
+
+（tool-asset-system）
+
+1. 本システムの位置づけ（全体思想）
+
+本システムは
+CAM / シミュレーション / 在庫管理を跨ぐ「工具資産の単一真実源（SSOT）」
+として設計されている。
+
+UIよりも ID設計・DB構造・拡張耐性を最優先
+
+小さく始めるが
+
+hyperMILL
+
+VERICUT
+
+実在庫管理
+への拡張を前提とする
+
+人の運用を縛りすぎず、判断を補助するDBを目指す
+
+2. レイヤー設計（最重要）
+レイヤーとは
+
+工具の 物理的・論理的な大分類
+
+hyperMILL の工具DB大分類と概念的に対応
+
+ID採番の単位になる
+
+現行レイヤー
+code	意味
+HOLDER	ホルダー
+SUB_HOLDER	サブホルダー
+TOOL_BODY	カッターボディ
+INSERT	インサート
+SOLID_TOOL	ソリッド工具
+SCREW	ねじ・クランプ
+ACCESSORY	付属品
+
+※ レイヤーは 辞書テーブル（layers）で管理
+→ 増減しても parts テーブルの構造変更は不要
+
+3. ID設計（運用の軸）
+採用方式
+LAYERPREFIX_00000001
+
+
+例：
+
+INSERT_00000001
+
+HOLDER_00000012
+
+設計理由
+
+人が見て意味が分かる
+
+CAM / VERICUT / 図面 / 帳票で共通に使える
+
+カテゴリ再編の影響を受けない
+
+将来の外部連携で 安定ID として機能
+
+実装
+
+id_sequences テーブルで レイヤー別連番管理
+
+採番はトランザクション内で行い 同時実行安全
+
+SQLite の id（INTEGER PK）は 内部参照専用
+
+4. SQL / DB構造（今回確認・確定した内容）
+4.1 schema_migrations
+
+マイグレーション管理用
+
+どのSQLが適用済みかを記録
+
+4.2 layers / categories（辞書系）
+layers
+
+レイヤー定義
+
+allow_free_category
+
+1 の場合のみ category_code = NULL を許容
+
+categories
+
+レイヤー配下のカテゴリ
+
+FKはあるが、運用優先で厳密には縛らない
+
+並び順・有効/無効を管理
+
+4.3 parts（単品パーツ：最重要）
+役割
+
+ホルダー、ボディ、インサート、ねじ等を すべて単体管理
+
+在庫管理・購買・消耗管理の最小単位
+
+主なカラム
+カラム	意味
+asset_code	運用ID（主キー的扱い）
+layer_code	レイヤー
+category_code	辞書カテゴリ（NULL可）
+category_free_text	自由記述カテゴリ
+maker + part_no	現実世界の同一性（UNIQUE）
+stock_qty / unit	在庫
+status	ACTIVE / ARCHIVED / OBSOLETE / PROVISIONAL
+設計ポイント
+
+データは消さない
+
+論理削除は status
+
+「迷ったら asset_code を信じる」
+
+4.4 statuses（状態辞書）
+
+status を 文字列ハードコードにしない
+
+UI表示は code / label 併記
+
+将来の状態追加に強い
+
+4.5 operation_logs
+
+すべての操作を記録
+
+UPDATE / ARCHIVE / RESTORE 等
+
+before / after を JSON で保持可能
+
+監査・追跡・AI活用の基盤
+
+4.6 validation triggers（DBの守護神）
+実装済み制約
+
+category_code が NULL 可能なのは
+→ layers.allow_free_category = 1 の場合のみ
+
+category_code がある場合
+
+categories に存在
+
+layer_code と一致
+
+status は statuses 辞書に存在必須
+
+👉 UIがバグってもDBが守る設計
+
+5. Web 層（今回実施した内容）
+5.1 routes_parts.py
+実施内容
+
+_get_label_maps() を追加
+
+layers / categories / statuses を
+code → label の辞書として一括取得
+
+各 render_template に以下を渡す
+
+layer_labels
+
+category_labels
+
+status_labels
+
+効果
+
+表示はすべて 辞書テーブルがSSOT
+
+label変更時にUI自動反映
+
+5.2 parts_detail.html（日本語化）
+実施内容
+
+layer / category / status を
+CODE / 日本語ラベル 表記に変更
+
+free category / free text の挙動は維持
+
+設計的メリット
+
+DB構造変更なし
+
+多言語化にも拡張可能
+
+5.3 parts_list / parts_archived
+
+一覧表示も同様に code / label 併記
+
+UIとDBの乖離を防止
+
+6. 現在の到達点（重要）
+
+レイヤー別ID採番：確立
+
+単品パーツ管理：実用レベル
+
+DB構造：拡張耐性あり
+
+辞書テーブル中心の設計：確立
+
+UIとDBの責務分離：良好
+
+👉 過去の「IDルールに縛られる問題」を回避できている
+
+7. 次フェーズ：アセンブリ（assemblies）
+目的
+
+holder + body + insert 等を束ねた 論理工具
+
+CAM / VERICUT 連携の主役
+
+DB（すでに存在）
+
+assemblies
+
+assembly_items
+
+次にやるべき作業（推奨順）
+
+assemblies の一覧表示
+
+assembly_code
+
+display_name
+
+tool_diameter / overall_length
+
+assemblies 詳細画面
+
+構成部品（assembly_items）
+
+assemblies 新規作成
+
+parts から assembly への追加UI
+
+CSV出力（加工用工具リスト）
+
+hyperMILL / VERICUT とのID対応検証
+
+8. 運用ルール（重要）
+
+構造・思想は 正
+
+勝手な簡略化・再設計は禁止
+
+推測実装は必ず確認
+
+本資料自体も 技術資産
+
+最後に
+
+この時点で本システムは
+**「個人ツール」ではなく、すでに“設計された基盤”**です。
+
+次は assemblies に進めば、
+CAM / シミュレーション連携が一気に現実になります。
+
+必要なら次は
+
+assemblies 用 SQL / routes / templates の設計図
+
+hyperMILL / VERICUT 連携を見据えた assembly 設計
+まで一緒に詰めましょう。

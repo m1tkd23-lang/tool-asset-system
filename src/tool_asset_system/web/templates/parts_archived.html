@@ -3,7 +3,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<form method="get" class="row">
+<form method="get" class="filter-form">
     <label>Layer:
         <select name="layer" onchange="this.form.submit()">
             <option value="">(all)</option>
@@ -35,11 +35,13 @@
         </select>
     </label>
 
-    <label>Search:
-        <input name="q" value="{{current.q or ''}}" placeholder="asset/maker/part/name">
-    </label>
-
-    <button type="submit">Filter</button>
+    <div class="filter-search">
+        <label>Search:
+            <input type="search" name="q" class="q-input" value="{{current.q or ''}}"
+                placeholder="asset/maker/part/name" autocomplete="off">
+        </label>
+        <button type="submit">Filter</button>
+    </div>
 </form>
 
 <table>
@@ -62,10 +64,28 @@
                     <code>{{ r.asset_code }}</code>
                 </a>
             </td>
-            <td>{{r.layer_code}}</td>
-            <td>{{r.category_code or "(free)"}}{% if r.category_free_text %} <span
-                    class="badge">{{r.category_free_text}}</span>{% endif %}</td>
-            <td>{{r.status}}</td>
+            <td>
+                {{ r.layer_code }}
+                {% set ll = layer_labels.get(r.layer_code, "") %}
+                {% if ll %} / {{ ll }}{% endif %}
+            </td>
+            <td>
+                {% if r.category_code %}
+                {{ r.category_code }}
+                {% set cl = category_labels.get(r.category_code, "") %}
+                {% if cl %} / {{ cl }}{% endif %}
+                {% else %}
+                (free)
+                {% endif %}
+                {% if r.category_free_text %}
+                <span class="badge">{{ r.category_free_text }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {{ r.status }}
+                {% set sl = status_labels.get(r.status, "") %}
+                {% if sl %} / {{ sl }}{% endif %}
+            </td>
             <td>{{r.maker}}</td>
             <td>{{r.part_no}}</td>
             <td>{{r.display_name}}</td>
