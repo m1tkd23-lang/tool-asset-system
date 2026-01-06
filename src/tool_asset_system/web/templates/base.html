@@ -6,74 +6,25 @@
 <head>
   <meta charset="utf-8">
   <title>tool-asset-system</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      margin: 24px;
-    }
-
-    .row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 12px;
-    }
-
-    th,
-    td {
-      border: 1px solid #ccc;
-      padding: 6px 8px;
-      font-size: 14px;
-    }
-
-    .ok {
-      color: #0a0;
-    }
-
-    .err {
-      color: #a00;
-    }
-
-    .badge {
-      padding: 2px 6px;
-      border: 1px solid #999;
-      border-radius: 8px;
-      font-size: 12px;
-    }
-
-    input,
-    select {
-      padding: 6px;
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<body>
-  <div class="row" style="justify-content: space-between;">
-    <h2 style="margin:0;">tool-asset-system</h2>
-    <div class="row">
-      <a href="/parts">Parts</a>
-      <a href="/parts/new">New</a>
-    </div>
-  </div>
+<body class="app-body">
+  <div class="app-root">
+    <header class="top-nav">
+      <h2 style="margin:0;">tool-asset-system</h2>
+      <nav class="nav-right">
+        <a href="{{ url_for('parts.parts_list') }}">Parts</a>
+        <a href="{{ url_for('parts.parts_new') }}">New</a>
+        <a href="{{ url_for('parts.parts_archived') }}">Archived</a>
+      </nav>
+    </header>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div style="margin:12px 0;">
-    {% for cat,msg in messages %}
-    <div class="{{cat}}">{{msg}}</div>
-    {% endfor %}
-  </div>
-  {% endif %}
-  {% endwith %}
+    <main class="app-main">
 
-  {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 </body>
 
 </html>

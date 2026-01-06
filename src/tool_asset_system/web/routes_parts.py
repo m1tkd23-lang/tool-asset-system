@@ -7,6 +7,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from tool_asset_system.db.db import connect
 from tool_asset_system.services.parts import update_part, archive_part
 from tool_asset_system.services.parts import add_part, list_parts
+from tool_asset_system.services.parts import restore_part
+
 from flask import abort
 
 
@@ -39,7 +41,9 @@ def home():
 def parts_list():
     layer = request.args.get("layer") or None
     category = request.args.get("category") or None
-    status = request.args.get("status") or None
+    status = request.args.get("status") or ""
+    if status == "":
+        status = "ACTIVE"
     q = request.args.get("q") or None
 
     rows = list_parts(layer_code=layer, category_code=category, status=status, q=q, limit=500)
@@ -53,6 +57,7 @@ def parts_list():
         categories=categories,
         current=dict(layer=layer, category=category, status=status, q=q),
     )
+
 
 @bp.route("/parts/new", methods=["GET", "POST"])
 def parts_new():
@@ -190,4 +195,51 @@ def part_edit(asset_code: str):
 def part_archive(asset_code: str):
     archive_part(asset_code)
     flash("Archived.", "ok")
+    return redirect(url_for("parts.part_detail", asset_code=asset_code))
+
+@bp.get("/parts/archived")
+def parts_archived():
+    # archived だけ表示（layer/category/q フィルタは既存と同様でOK）
+    layer = request.args.get("layer") or ""
+    category = request.args.get("category") or ""
+    q = request.args.get("q") or ""
+
+    with connect() as con:
+        layers = con.execute("SELECT code,label FROM layers ORDER BY sort_order, code").fetchall()
+        categories = _get_categories_for_layer(layer) if layer else []
+
+        sql = """
+        SELECT asset_code, layer_code, category_code, category_free_text,
+               status, maker, part_no, display_name
+        FROM parts
+        WHERE status = 'ARCHIVED'
+        """
+        params = []
+        if layer:
+            sql += " AND layer_code = ?"
+            params.append(layer)
+        if category:
+            sql += " AND category_code = ?"
+            params.append(category)
+        if q:
+            sql += " AND (asset_code LIKE ? OR maker LIKE ? OR part_no LIKE ? OR display_name LIKE ?)"
+            like = f"%{q}%"
+            params += [like, like, like, like]
+
+        sql += " ORDER BY updated_at DESC, asset_code"
+
+        rows = con.execute(sql, params).fetchall()
+
+    return render_template(
+        "parts_archived.html",
+        rows=rows,
+        layers = _get_layers(),
+        categories=categories,
+        current={"layer": layer, "category": category, "status": "ARCHIVED", "q": q},
+    )
+
+@bp.post("/parts/<asset_code>/restore")
+def part_restore(asset_code: str):
+    restore_part(asset_code)
+    flash("Restored.", "ok")
     return redirect(url_for("parts.part_detail", asset_code=asset_code))

@@ -237,3 +237,20 @@ def _insert_log(con, *, action: str, target_code: str, actor: str, target_type: 
     use = [k for k in ["action", "target_type", "target_code", "actor"] if k in cols]
     sql = f"INSERT INTO operation_logs({', '.join(use)}) VALUES({', '.join(['?']*len(use))})"
     con.execute(sql, [data[k] for k in use])
+
+def restore_part(asset_code: str, *, actor: str | None = None) -> None:
+    actor = actor or os.environ.get("USERNAME") or "unknown"
+    with connect() as con:
+        con.execute("BEGIN IMMEDIATE")
+        cur = con.execute(
+            "UPDATE parts SET status='ACTIVE', updated_at=CURRENT_TIMESTAMP WHERE asset_code=?",
+            (asset_code,),
+        )
+        if cur.rowcount != 1:
+            raise ValueError(f"part not found: {asset_code}")
+
+        con.execute(
+            "INSERT INTO operation_logs(action,target_type,target_code,actor) VALUES(?,?,?,?)",
+            ("PART_RESTORE", "PART", asset_code, actor),
+        )
+        con.commit()

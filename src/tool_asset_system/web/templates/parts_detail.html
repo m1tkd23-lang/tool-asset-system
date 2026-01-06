@@ -4,6 +4,7 @@
 {% block content %}
 
 <h3>Part Detail</h3>
+
 <div class="row" style="gap:12px;">
     <a href="{{ url_for('parts.part_edit', asset_code=part.asset_code) }}">Edit</a>
 
@@ -12,122 +13,126 @@
         onsubmit="return confirm('Archive this part?');">
         <button type="submit">Archive</button>
     </form>
+    {% else %}
+    <form method="post" action="{{ url_for('parts.part_restore', asset_code=part.asset_code) }}"
+        onsubmit="return confirm('Restore this part to ACTIVE?');">
+        <button type="submit">Restore</button>
+    </form>
     {% endif %}
-</div>
 
 
 
-<div class="row" style="gap:24px; align-items:flex-start;">
-    <div style="min-width:420px;">
-        <table>
-            <tbody>
-                <tr>
-                    <th>asset_code</th>
-                    <td><code>{{ part.asset_code }}</code></td>
-                </tr>
-                <tr>
-                    <th>layer</th>
-                    <td>{{ part.layer_code }}</td>
-                </tr>
-                <tr>
-                    <th>category</th>
-                    <td>
-                        {{ part.category_code or "(free)" }}
-                        {% if part.category_free_text %}
-                        <span class="badge">{{ part.category_free_text }}</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <th>status</th>
-                    <td>{{ part.status }}</td>
-                </tr>
+    <div class="row" style="gap:24px; align-items:flex-start;">
+        <div style="min-width:420px;">
+            <table>
+                <tbody>
+                    <tr>
+                        <th>asset_code</th>
+                        <td><code>{{ part.asset_code }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>layer</th>
+                        <td>{{ part.layer_code }}</td>
+                    </tr>
+                    <tr>
+                        <th>category</th>
+                        <td>
+                            {{ part.category_code or "(free)" }}
+                            {% if part.category_free_text %}
+                            <span class="badge">{{ part.category_free_text }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>status</th>
+                        <td>{{ part.status }}</td>
+                    </tr>
 
-                <tr>
-                    <th>maker</th>
-                    <td>{{ part.maker }}</td>
-                </tr>
-                <tr>
-                    <th>part_no</th>
-                    <td>{{ part.part_no }}</td>
-                </tr>
-                <tr>
-                    <th>maker_part_name</th>
-                    <td>{{ part.maker_part_name or "-" }}</td>
-                </tr>
-                <tr>
-                    <th>display_name</th>
-                    <td>{{ part.display_name }}</td>
-                </tr>
+                    <tr>
+                        <th>maker</th>
+                        <td>{{ part.maker }}</td>
+                    </tr>
+                    <tr>
+                        <th>part_no</th>
+                        <td>{{ part.part_no }}</td>
+                    </tr>
+                    <tr>
+                        <th>maker_part_name</th>
+                        <td>{{ part.maker_part_name or "-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>display_name</th>
+                        <td>{{ part.display_name }}</td>
+                    </tr>
 
-                <tr>
-                    <th>stock</th>
-                    <td>{{ part.stock_qty }} {{ part.stock_unit }}</td>
-                </tr>
-                <tr>
-                    <th>pack_qty</th>
-                    <td>{{ part.pack_qty or "-" }}</td>
-                </tr>
-                <tr>
-                    <th>unit_price</th>
-                    <td>{{ part.unit_price or "-" }}</td>
-                </tr>
-                <tr>
-                    <th>supplier</th>
-                    <td>{{ part.supplier or "-" }}</td>
-                </tr>
-                <tr>
-                    <th>lead_time_days</th>
-                    <td>{{ part.lead_time_days or "-" }}</td>
-                </tr>
-                <tr>
-                    <th>min_stock_qty</th>
-                    <td>{{ part.min_stock_qty or "-" }}</td>
-                </tr>
+                    <tr>
+                        <th>stock</th>
+                        <td>{{ part.stock_qty }} {{ part.stock_unit }}</td>
+                    </tr>
+                    <tr>
+                        <th>pack_qty</th>
+                        <td>{{ part.pack_qty or "-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>unit_price</th>
+                        <td>{{ part.unit_price or "-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>supplier</th>
+                        <td>{{ part.supplier or "-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>lead_time_days</th>
+                        <td>{{ part.lead_time_days or "-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>min_stock_qty</th>
+                        <td>{{ part.min_stock_qty or "-" }}</td>
+                    </tr>
 
-                <tr>
-                    <th>note</th>
-                    <td>{{ part.note or "-" }}</td>
-                </tr>
+                    <tr>
+                        <th>note</th>
+                        <td>{{ part.note or "-" }}</td>
+                    </tr>
 
-                <tr>
-                    <th>created_at</th>
-                    <td>{{ part.created_at }}</td>
-                </tr>
-                <tr>
-                    <th>updated_at</th>
-                    <td>{{ part.updated_at }}</td>
-                </tr>
-            </tbody>
-        </table>
+                    <tr>
+                        <th>created_at</th>
+                        <td>{{ part.created_at }}</td>
+                    </tr>
+                    <tr>
+                        <th>updated_at</th>
+                        <td>{{ part.updated_at }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="flex:1; min-width:520px;">
+            <h4 style="margin-top:0;">Operation Logs</h4>
+
+            {% if logs and logs|length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for k in logs[0].keys() %}
+                        <th>{{ k }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in logs %}
+                    <tr>
+                        {% for k in r.keys() %}
+                        <td>{{ r[k] }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="color:#666;">No logs for this part.</div>
+            {% endif %}
+        </div>
     </div>
 
-    <div style="flex:1; min-width:520px;">
-        <h4 style="margin-top:0;">Operation Logs</h4>
-
-        {% if logs and logs|length > 0 %}
-        <table>
-            <thead>
-                <tr>
-                    {% for k in logs[0].keys() %}
-                    <th>{{ k }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in logs %}
-                <tr>
-                    {% for k in r.keys() %}
-                    <td>{{ r[k] }}</td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div style="color:#666;">No logs for this part.</div>
-        {% endif %}
-    </div>
-</div>
-
-{% endblock %}
+    {% endblock %}
