@@ -49,11 +49,11 @@
                 <thead>
                     <tr>
                         <th>tool_no</th>
-                        <th>qty</th>
                         <th>assembly_code</th>
-                        <th>assembly_name</th>
+                        <th>display_name</th>
                         <th>tool_diameter</th>
                         <th>tool_overall_length</th>
+                        <th>qty</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -61,15 +61,20 @@
                     {% for it in items %}
                     <tr>
                         <td><code>{{ it.tool_no }}</code></td>
-                        <td>{{ it.qty }}</td>
+
                         <td>
-                            <a href="{{ url_for('assemblies.assembly_detail', assembly_code=it.assembly_code) }}">
+                            <a href="{{ url_for('assemblies.assembly_detail', assembly_code=it.assembly_code) }}"
+                                target="_blank" rel="noopener">
                                 <code>{{ it.assembly_code }}</code>
                             </a>
                         </td>
+
                         <td>{{ it.assembly_name }}</td>
                         <td>{{ it.tool_diameter or '' }}</td>
                         <td>{{ it.tool_overall_length or '' }}</td>
+
+                        <td>{{ it.qty }}</td>
+
                         <td>
                             <form method="post"
                                 action="{{ url_for('tooling_lists.tooling_list_item_remove', list_code=tl.list_code, item_id=it.item_id) }}"
