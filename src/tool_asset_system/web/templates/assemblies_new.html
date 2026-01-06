@@ -5,6 +5,62 @@
 <h2>New Assembly</h2>
 
 <!-- =========================
+     Pick parts filters (GET)  ※入れ子禁止なので外に出す
+     ========================= -->
+<div class="panel">
+    <div class="panel-header">
+        <h3>Pick parts (filter)</h3>
+    </div>
+
+    <form method="get" id="parts_filter_form" class="filter-form" style="margin-bottom: 10px;">
+        <label>
+            Layer:
+            <select name="layer" onchange="this.form.submit()">
+                <option value="">(all)</option>
+                {% for l in layers %}
+                <option value="{{ l.code }}" {% if current.layer==l.code %}selected{% endif %}>
+                    {{ l.code }} / {{ l.label }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Category:
+            <select name="category">
+                <option value="">(all)</option>
+                {% for c in categories %}
+                <option value="{{ c.code }}" {% if current.category==c.code %}selected{% endif %}>
+                    {{ c.code }} / {{ c.label }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Status:
+            <select name="status">
+                {% set st = current.status or "ACTIVE" %}
+                {% for s in ["ACTIVE","ARCHIVED","OBSOLETE","PROVISIONAL"] %}
+                <option value="{{ s }}" {% if st==s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <div class="filter-search">
+            <label>
+                Search:
+                <input type="search" name="q" class="q-input" value="{{ current.q or '' }}"
+                    placeholder="asset/maker/part/name" autocomplete="off">
+            </label>
+            <button type="submit">Search</button>
+        </div>
+    </form>
+</div>
+
+<div style="height:12px;"></div>
+
+<!-- =========================
      Assembly meta + Create (POST)
      ========================= -->
 <form method="post" id="asm_new_form">
@@ -40,9 +96,6 @@
 
     <div style="height:12px;"></div>
 
-    <!-- =========================
-       Pick parts
-       ========================= -->
     <div class="panel">
         <div class="panel-header">
             <h3>Pick parts</h3>
@@ -53,54 +106,8 @@
             <code id="signature-preview"></code>
         </div>
 
-        <!-- フィルタ条件は GET で保持したいので、別フォームにする -->
-        <form method="get" id="parts_filter_form" class="filter-form" style="margin-bottom: 10px;">
-            <label>
-                Layer:
-                <select name="layer" onchange="this.form.submit()">
-                    <option value="">(all)</option>
-                    {% for l in layers %}
-                    <option value="{{ l.code }}" {% if current.layer==l.code %}selected{% endif %}>
-                        {{ l.code }} / {{ l.label }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </label>
-
-            <label>
-                Category:
-                <select name="category">
-                    <option value="">(all)</option>
-                    {% for c in categories %}
-                    <option value="{{ c.code }}" {% if current.category==c.code %}selected{% endif %}>
-                        {{ c.code }} / {{ c.label }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </label>
-
-            <label>
-                Status:
-                <select name="status">
-                    {% set st = current.status or "ACTIVE" %}
-                    {% for s in ["ACTIVE","ARCHIVED","OBSOLETE","PROVISIONAL"] %}
-                    <option value="{{ s }}" {% if st==s %}selected{% endif %}>{{ s }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-
-            <div class="filter-search">
-                <label>
-                    Search:
-                    <input type="search" name="q" class="q-input" value="{{ current.q or '' }}"
-                        placeholder="asset/maker/part/name" autocomplete="off">
-                </label>
-                <button type="submit">Search</button>
-            </div>
-        </form>
-
         <p class="text-muted" style="margin: 0 0 10px;">
-            使いたいpartsにチェック → role/qty を必要なら入れる → 下の「Create ASM」で作成します。
+            使いたいpartsにチェック → role/qty を必要なら入れる → 「Create ASM」で作成。
         </p>
 
         <div class="table-scroll">
@@ -122,11 +129,7 @@
                 <tbody>
                     {% for r in parts_rows %}
                     <tr data-asset-code="{{ r.asset_code }}" data-layer="{{ r.layer_code }}">
-                        <td>
-                            <!-- checked はJSが復元 -->
-                            <input type="checkbox" class="pick-check" data-ac="{{ r.asset_code }}">
-                        </td>
-
+                        <td><input type="checkbox" class="pick-check" data-ac="{{ r.asset_code }}"></td>
                         <td><code>{{ r.asset_code }}</code></td>
 
                         <td>
@@ -151,21 +154,11 @@
                                 name="qty_{{ r.asset_code }}" value="{{ form.get('qty_' ~ r.asset_code, '1') }}">
                         </td>
 
-                        <td>
-                            {{ r.layer_code }}
-                            {% if layer_labels is defined %}
-                            {% set ll = layer_labels.get(r.layer_code, "") %}
-                            {% if ll %} / {{ ll }}{% endif %}
-                            {% endif %}
-                        </td>
+                        <td>{{ r.layer_code }}</td>
 
                         <td>
                             {% if r.category_code %}
                             {{ r.category_code }}
-                            {% if category_labels is defined %}
-                            {% set cl = category_labels.get(r.category_code, "") %}
-                            {% if cl %} / {{ cl }}{% endif %}
-                            {% endif %}
                             {% else %}
                             (free)
                             {% endif %}
@@ -185,9 +178,7 @@
 
     </div>
 
-    <div style="height:12px;"></div>
-
-    <!-- JSがここに hidden を追加して selected_parts をPOSTする -->
+    <!-- JSが selected_parts hidden をここに追加 -->
     <div id="selected-parts-hidden"></div>
 
     <div class="detail-actions">

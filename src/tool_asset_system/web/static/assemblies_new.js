@@ -41,7 +41,17 @@
         try {
             localStorage.setItem(STORE_KEY, JSON.stringify(store));
         } catch {
-            // ignore (private mode etc.)
+            // ignore
+        }
+    }
+
+    /** @param {Record<string, SelItem>} store */
+    function clearStore(store) {
+        for (const k of Object.keys(store)) delete store[k];
+        try {
+            localStorage.removeItem(STORE_KEY);
+        } catch {
+            // ignore
         }
     }
 
@@ -52,10 +62,8 @@
     const previewEl = document.getElementById("signature-preview");
     const hiddenBox = document.getElementById("selected-parts-hidden");
 
-    if (!asmForm || !previewEl || !hiddenBox) {
-        // Template not ready or IDs changed
-        return;
-    }
+    // hiddenBox は「selected_parts を hidden で注入」するため必須
+    if (!asmForm || !previewEl || !hiddenBox) return;
 
     // store: asset_code -> SelItem
     const store = loadStore();
@@ -107,20 +115,6 @@
         return { asset_code, layer, role, qty };
     }
 
-    /** @param {string} asset_code */
-    function ensureStoreHasLayer(asset_code) {
-        if (store[asset_code] && store[asset_code].layer) return;
-
-        // try find on current page
-        const tr = document.querySelector(
-            `.pick-parts-table tbody tr[data-asset-code="${CSS.escape(asset_code)}"]`
-        );
-        if (tr && tr instanceof HTMLTableRowElement) {
-            const layer = tr.dataset.layer || "";
-            if (store[asset_code]) store[asset_code].layer = layer;
-        }
-    }
-
     function restoreUIFromStore() {
         const rows = document.querySelectorAll(".pick-parts-table tbody tr");
         rows.forEach((tr) => {
@@ -133,15 +127,13 @@
             const it = store[ac];
             const isSel = !!it;
 
-            if (chk && chk instanceof HTMLInputElement) {
-                chk.checked = isSel;
-            }
+            if (chk && chk instanceof HTMLInputElement) chk.checked = isSel;
             setRowSelected(tr, isSel);
 
-            // restore role/qty for selected rows
             if (isSel) {
                 if (roleEl && "value" in roleEl) roleEl.value = it.role ?? "";
-                if (qtyEl && qtyEl instanceof HTMLInputElement) qtyEl.value = String(it.qty ?? 1);
+                if (qtyEl && qtyEl instanceof HTMLInputElement)
+                    qtyEl.value = String(it.qty ?? 1);
             }
         });
 
@@ -165,7 +157,6 @@
                 chk.addEventListener("change", () => {
                     if (chk.checked) {
                         const data = readRow(tr);
-                        // ensure layer known
                         data.layer = data.layer || layer;
                         store[ac] = data;
                         setRowSelected(tr, true);
@@ -179,7 +170,6 @@
             }
 
             const onRoleQtyChange = () => {
-                // only update store if currently selected
                 if (!store[ac]) return;
                 const data = readRow(tr);
                 data.layer = data.layer || store[ac].layer || layer;
@@ -189,22 +179,24 @@
             };
 
             if (roleEl) roleEl.addEventListener("change", onRoleQtyChange);
-            if (qtyEl) qtyEl.addEventListener("change", onRoleQtyChange);
-            if (qtyEl) qtyEl.addEventListener("input", onRoleQtyChange);
+            if (qtyEl) {
+                qtyEl.addEventListener("change", onRoleQtyChange);
+                qtyEl.addEventListener("input", onRoleQtyChange);
+            }
         });
     }
 
     // =========================
     // Create ASM submit: inject hidden fields
-    // - selected_parts (list)
-    // - role_{ac}, qty_{ac} for parts NOT on current page
     // =========================
     function clearHiddenBox() {
         while (hiddenBox.firstChild) hiddenBox.removeChild(hiddenBox.firstChild);
     }
 
     function hasInputNamed(name) {
-        return asmForm.querySelector(`[name="${CSS.escape(name)}"]`) !== null;
+        // CSS.escape が無い環境の保険
+        const esc = window.CSS && CSS.escape ? CSS.escape(name) : name.replace(/"/g, '\\"');
+        return asmForm.querySelector(`[name="${esc}"]`) !== null;
     }
 
     function addHidden(name, value) {
@@ -215,63 +207,122 @@
         hiddenBox.appendChild(inp);
     }
 
+    function getSubmitter(ev) {
+        // ev.submitter が取れない環境の保険
+        return ev.submitter || document.activeElement;
+    }
+
     asmForm.addEventListener("submit", (ev) => {
-        // If user pressed "Search" by mistake inside POST form (should be GET), still avoid creating.
-        // But now Search is in separate GET form, so normally not needed.
-        // We keep it safe anyway:
-        const submitter = ev.submitter;
-        if (submitter && submitter.name === "action" && submitter.value === "search") {
+        const submitter = getSubmitter(ev);
+
+        // createボタン以外のsubmitが来たら何もしない（保険）
+        if (
+            submitter &&
+            submitter instanceof HTMLElement &&
+            submitter.getAttribute("name") === "action" &&
+            submitter.getAttribute("value") !== "create"
+        ) {
             return;
         }
 
         const selected = Object.values(store);
-
-        // server expects at least one selected_parts when creating
-        if (submitter && submitter.name === "action" && submitter.value === "create") {
-            if (selected.length === 0) {
-                // Let server show flash, but we can block earlier to be kind
-                ev.preventDefault();
-                alert("選択された parts がありません（チェックしてください）");
-                return;
-            }
+        if (selected.length === 0) {
+            ev.preventDefault();
+            alert("選択された parts がありません（チェックしてください）");
+            return;
         }
 
         clearHiddenBox();
 
-        // Always ensure deterministic order on submission (so signature is stable)
         selected.sort(compareSel);
 
-        // 1) selected_parts list
-        for (const it of selected) {
-            addHidden("selected_parts", it.asset_code);
-        }
+        for (const it of selected) addHidden("selected_parts", it.asset_code);
 
-        // 2) For parts not currently rendered, add role/qty hidden so server can read them
         for (const it of selected) {
             const roleName = `role_${it.asset_code}`;
             const qtyName = `qty_${it.asset_code}`;
 
-            // if inputs exist on page, keep them (user might have edited)
             if (!hasInputNamed(roleName)) addHidden(roleName, it.role ?? "");
             if (!hasInputNamed(qtyName)) addHidden(qtyName, String(it.qty ?? 1));
         }
     });
 
     // =========================
-    // Nice-to-have: clear selection after successful create
-    // (We can't detect success from here reliably, but we can clear on leaving detail page etc.)
-    // => Do nothing automatically. User can keep picking many assemblies.
-    // Provide global helper if needed.
+    // Toast (light notification)
     // =========================
-    window.asmNewClearSelection = function () {
-        for (const k of Object.keys(store)) delete store[k];
-        saveStore(store);
+    function showToast(message) {
+        const el = document.createElement("div");
+        el.className = "copy-toast";
+        el.textContent = message;
+        document.body.appendChild(el);
+
+        // position (top-right)
+        el.style.top = "14px";
+        el.style.right = "14px";
+
+        requestAnimationFrame(() => el.classList.add("is-visible"));
+
+        window.setTimeout(() => {
+            el.classList.remove("is-visible");
+            window.setTimeout(() => el.remove(), 250);
+        }, 1400);
+    }
+
+    // =========================
+    // Success detection
+    // 1) URL ?created=ASM_xxx
+    // 2) Flash text includes "Created: ASM_xxx" (200返しでも拾う)
+    // =========================
+    function detectCreatedCode() {
+        const url = new URL(window.location.href);
+        const created = url.searchParams.get("created");
+        if (created) return { code: created, via: "query" };
+
+        // flash のテキストから拾う（base.html が flash を表示している前提）
+        const flashRoot = document.querySelector(".flash-messages") || document.body;
+        const text = (flashRoot.textContent || "").trim();
+        const m = text.match(/Created:\s*(ASM_\d+)/);
+        if (m) return { code: m[1], via: "flash" };
+
+        return null;
+    }
+
+    function cleanupCreatedParamInUrl() {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has("created")) return;
+        url.searchParams.delete("created");
+        window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
+
+    function resetAfterSuccess(createdCode) {
+        // toast
+        showToast(`Created: ${createdCode}`);
+
+        // clear localStorage selection
+        clearStore(store);
+
+        // uncheck in UI + preview update
         restoreUIFromStore();
-    };
+
+        // URL掃除（created付きで戻ってきた場合）
+        cleanupCreatedParamInUrl();
+    }
 
     // =========================
     // Init
     // =========================
     attachHandlers();
     restoreUIFromStore();
+
+    const createdInfo = detectCreatedCode();
+    if (createdInfo && createdInfo.code) {
+        resetAfterSuccess(createdInfo.code);
+    }
+
+    // Optional: expose manual clear
+    window.asmNewClearSelection = function () {
+        clearStore(store);
+        restoreUIFromStore();
+        showToast("Selection cleared");
+    };
 })();
