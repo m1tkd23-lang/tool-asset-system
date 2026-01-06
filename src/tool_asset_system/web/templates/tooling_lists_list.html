@@ -1,0 +1,41 @@
+<!--src/tool_asset_system/web/templates/tooling_lists_list.html-->
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Tooling Lists</h2>
+
+<form method="get" class="filter-form">
+    <label>Search:
+        <input type="search" name="q" class="q-input" value="{{ current.q or '' }}" placeholder="code/title/note"
+            autocomplete="off">
+    </label>
+    <div class="filter-search">
+        <button type="submit">Filter</button>
+        <a class="btn-link" href="{{ url_for('tooling_lists.tooling_lists_new') }}">New Tooling List</a>
+    </div>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>list_code</th>
+            <th>title</th>
+            <th>updated_at</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in rows %}
+        <tr>
+            <td>
+                <a href="{{ url_for('tooling_lists.tooling_list_detail', list_code=r.list_code) }}">
+                    <code>{{ r.list_code }}</code>
+                </a>
+            </td>
+            <td>{{ r.title }}</td>
+            <td>{{ r.updated_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

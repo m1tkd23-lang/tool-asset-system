@@ -324,6 +324,15 @@ tbody tr:hover td {
   background-color: var(--accent-soft);
 }
 
+
+/* assemblies_new: qty input を細くする */
+.pick-qty {
+  width: 72px;
+  max-width: 72px;
+  padding: 4px 6px;
+}
+
+
 /* =========================================================
      タグ
      ========================================================= */

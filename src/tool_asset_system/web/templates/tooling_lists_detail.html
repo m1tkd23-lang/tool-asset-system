@@ -1,0 +1,89 @@
+<!--src/tool_asset_system/web/templates/tooling_lists_detail.html-->
+
+{% extends "base.html" %}
+{% block content %}
+
+<h2>
+    <span class="copyable" data-copy="{{ tl.list_code }} {{ tl.title }}">
+        {{ tl.list_code }} / {{ tl.title }}
+    </span>
+</h2>
+
+<p class="text-muted">
+    Created: {{ tl.created_at }} / Updated: {{ tl.updated_at }}
+</p>
+
+<div class="detail-actions">
+    <a class="btn-link" href="{{ url_for('tooling_lists.tooling_lists_list') }}">Back</a>
+</div>
+
+<div class="detail-grid">
+    <div class="panel">
+        <div class="panel-header">
+            <h3>List meta</h3>
+        </div>
+
+        <form method="post" action="{{ url_for('tooling_lists.tooling_list_update', list_code=tl.list_code) }}"
+            class="edit-form meta-form">
+            <label>Title:
+                <input type="text" name="title" value="{{ tl.title }}">
+            </label>
+
+            <label class="edit-note">Note:
+                <textarea name="note" rows="4">{{ tl.note or '' }}</textarea>
+            </label>
+
+            <div class="form-actions">
+                <button type="submit" class="btn">Update</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h3>Items</h3>
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>tool_no</th>
+                        <th>qty</th>
+                        <th>assembly_code</th>
+                        <th>assembly_name</th>
+                        <th>tool_diameter</th>
+                        <th>tool_overall_length</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for it in items %}
+                    <tr>
+                        <td><code>{{ it.tool_no }}</code></td>
+                        <td>{{ it.qty }}</td>
+                        <td>
+                            <a href="{{ url_for('assemblies.assembly_detail', assembly_code=it.assembly_code) }}">
+                                <code>{{ it.assembly_code }}</code>
+                            </a>
+                        </td>
+                        <td>{{ it.assembly_name }}</td>
+                        <td>{{ it.tool_diameter or '' }}</td>
+                        <td>{{ it.tool_overall_length or '' }}</td>
+                        <td>
+                            <form method="post"
+                                action="{{ url_for('tooling_lists.tooling_list_item_remove', list_code=tl.list_code, item_id=it.item_id) }}"
+                                onsubmit="return confirm('Remove this item?');">
+                                <button type="submit" class="btn">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

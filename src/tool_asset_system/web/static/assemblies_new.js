@@ -1,4 +1,5 @@
-// static/assemblies_new.js
+//src/tool_asset_system/web/static/assemblies_new.js
+
 (() => {
     "use strict";
 

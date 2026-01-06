@@ -5,54 +5,71 @@
 <h2>New Part</h2>
 
 <form method="post" class="edit-form">
+
+    <!-- 1行目：Layer / Category(辞書) / Part No -->
     <label>Layer
-        <select id="layer" name="layer">
+        <select name="layer" onchange="this.form.submit()">
             {% for l in layers %}
-            <option value="{{l.code}}" {% if selected_layer==l.code %}selected{% endif %}>
-                {{l.code}} / {{l.label}}
+            <option value="{{ l.code }}" {% if (request.values.get('layer') or selected_layer)==l.code %}selected{%
+                endif %}>
+                {{ l.code }} / {{ l.label }}
             </option>
             {% endfor %}
         </select>
     </label>
 
     <label>Category（辞書）
-        <select id="category" name="category">
-            <option value="">(none)</option>
+        <select name="category">
+            <option value="">(free)</option>
             {% for c in categories %}
-            <option value="{{c.code}}">{{c.code}} / {{c.label}}</option>
+            <option value="{{ c.code }}" {% if form.get('category','')==c.code %}selected{% endif %}>
+                {{ c.code }} / {{ c.label }}
+            </option>
             {% endfor %}
         </select>
-        <small class="text-muted">※ free許可レイヤーのみ categoryなし可（DBが判定）</small>
-    </label>
-
-    <label>Category free text（任意）
-        <input type="text" name="category_free" value="{{form.get('category_free','')}}">
-    </label>
-
-    <label>Maker
-        <input type="text" name="maker" required value="{{form.get('maker','')}}">
     </label>
 
     <label>Part No
-        <input type="text" name="part_no" required value="{{form.get('part_no','')}}">
+        <input type="text" name="part_no" value="{{ form.get('part_no','') }}" required>
+    </label>
+
+    <!-- 2行目：Maker / Category free text（任意） / Unit -->
+    <label>Maker
+        <input type="text" name="maker" value="{{ form.get('maker','') }}" required>
+    </label>
+
+    <label>Category free text（任意）
+        <input type="text" name="category_free" value="{{ form.get('category_free','') }}">
     </label>
 
     <label>Unit
-        <input type="text" name="unit" value="{{form.get('unit','EA')}}">
+        <select name="unit">
+            {% set u = form.get('unit','EA') %}
+            {% for opt in ['EA','SET','PCS','BOX'] %}
+            <option value="{{ opt }}" {% if u==opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+        </select>
     </label>
 
+    <!-- 3行目：Display name（任意） / Maker part name（任意） -->
     <label>Display name（任意）
-        <input type="text" name="name" value="{{form.get('name','')}}">
+        <input type="text" name="name" value="{{ form.get('name','') }}">
     </label>
 
     <label>Maker part name（任意）
-        <input type="text" name="maker_part_name" value="{{form.get('maker_part_name','')}}">
+        <input type="text" name="maker_part_name" value="{{ form.get('maker_part_name','') }}">
     </label>
+
+    <!-- 3列目を空けたい場合（見た目を整える用・任意） -->
+    <div></div>
+
 
     <div class="form-actions">
         <button type="submit" class="btn">Add</button>
+        <a class="btn-link" href="{{ url_for('parts.parts_list') }}">Back</a>
     </div>
 </form>
+
 
 <script>
     // layer変更時にカテゴリ候補を取り直す
