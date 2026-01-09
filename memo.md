@@ -20,7 +20,7 @@ python .\apps\main.py
 
 
 $env:PYTHONPATH = (Resolve-Path .\src).Path
->> python .\apps\web.py
+ python .\apps\web.py
 
 
 ★これはDBを更新するときに
